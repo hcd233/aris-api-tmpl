@@ -2,9 +2,9 @@
 package router
 
 import (
-	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/swagger"
-	"github.com/hcd233/go-backend-tmpl/internal/handler"
+    "github.com/gofiber/fiber/v2"
+    "github.com/gofiber/swagger"
+    "github.com/hcd233/go-backend-tmpl/internal/handler"
 )
 
 // RegisterRouter 注册路由
@@ -15,6 +15,9 @@ import (
 func RegisterRouter(app *fiber.App) {
 	// swagger
 	app.Get("/swagger/*", swagger.HandlerDefault)
+
+    // Huma OpenAPI 文档与示例接口
+    RegisterHuma(app)
 
 	pingService := handler.NewPingHandler()
 	app.Get("/", pingService.HandlePing)
