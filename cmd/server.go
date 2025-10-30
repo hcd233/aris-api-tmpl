@@ -71,11 +71,7 @@ var startServerCmd = &cobra.Command{
 		)
 
 		rootRouter := router.RegisterRouter(app)
-		_ = humafiber.NewWithGroup(app, rootRouter, huma.Config{
-			OpenAPIPath: "/openapi",
-			DocsPath:    "/docs",
-			SchemasPath: "/schemas",
-		})
+		_ = humafiber.NewWithGroup(app, rootRouter, huma.DefaultConfig("go-backend-tmpl", "1.0.0"))
 
 		lo.Must0(app.Listen(fmt.Sprintf("%s:%s", host, port)))
 	},
