@@ -14,8 +14,8 @@ import (
 func RegisterRouter(app *fiber.App) fiber.Router {
 	pingService := handler.NewPingHandler()
 
-	rootRouter := app.Group("/")
-	rootRouter.Get("", pingService.HandlePing)
+	rootRouter := app.Group("")
+	rootRouter.Get("/", pingService.HandlePing)
 	v1Router := rootRouter.Group("/v1")
 	{
 		initTokenRouter(v1Router)
