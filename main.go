@@ -5,7 +5,6 @@ package main
 
 import (
 	"github.com/hcd233/go-backend-tmpl/cmd"
-	_ "github.com/hcd233/go-backend-tmpl/docs"
 )
 
 // @title           Go Backend Tmpl

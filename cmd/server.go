@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"github.com/bytedance/sonic"
+	"github.com/danielgtaylor/huma/v2"
+	"github.com/danielgtaylor/huma/v2/adapters/humafiber"
 	"github.com/gofiber/fiber/v2"
 	"github.com/hcd233/go-backend-tmpl/internal/config"
 	"github.com/hcd233/go-backend-tmpl/internal/cron"
@@ -68,7 +70,12 @@ var startServerCmd = &cobra.Command{
 			middleware.RecoverMiddleware(),
 		)
 
-		router.RegisterRouter(app)
+		rootRouter := router.RegisterRouter(app)
+		_ = humafiber.NewWithGroup(app, rootRouter, huma.Config{
+			OpenAPIPath: "/openapi",
+			DocsPath:    "/docs",
+			SchemasPath: "/schemas",
+		})
 
 		lo.Must0(app.Listen(fmt.Sprintf("%s:%s", host, port)))
 	},
