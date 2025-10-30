@@ -26,7 +26,7 @@ type ExampleCron struct {
 func NewExampleCron() Cron {
 	return &ExampleCron{
 		cron: cron.New(
-			cron.WithLogger(newCronLoggerAdapter("QuotaCron", logger.Logger())),
+			cron.WithLogger(newCronLoggerAdapter("ExampleCron", logger.Logger())),
 		),
 	}
 }
@@ -39,8 +39,7 @@ func NewExampleCron() Cron {
 //	@update 2025-09-30 16:11:28
 func (c *ExampleCron) Start() error {
 	// debug set 10 seconds
-	entryID, err := c.cron.AddFunc("every 10s", c.doSomething)
-	// c.cron.AddFunc("daily", c.deliverQuotas)
+	entryID, err := c.cron.AddFunc("*/10 * * * * *", c.doSomething)
 	if err != nil {
 		logger.Logger().Error("[ExampleCron] add func error", zap.Error(err))
 		return err
