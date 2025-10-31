@@ -1,23 +1,54 @@
 package router
 
 import (
-	"github.com/gofiber/fiber/v2"
+	"net/http"
+
+	"github.com/danielgtaylor/huma/v2"
 	"github.com/hcd233/go-backend-tmpl/internal/handler"
 	"github.com/hcd233/go-backend-tmpl/internal/middleware"
-	"github.com/hcd233/go-backend-tmpl/internal/protocol"
 )
 
-func initUserRouter(r fiber.Router) {
+func initUserRouter(userGroup *huma.Group) {
 	userHandler := handler.NewUserHandler()
 
-	userRouter := r.Group("/user", middleware.JwtMiddleware())
-	{
-		userRouter.Get("/current", userHandler.HandleGetCurUserInfo)
-		userRouter.Patch("/", middleware.ValidateBodyMiddleware(&protocol.UpdateUserBody{}), userHandler.HandleUpdateInfo)
-		userNameRouter := userRouter.Group("/:userID", middleware.ValidateURIMiddleware(&protocol.UserURI{}))
-		{
-			userNameRouter.Get("/", userHandler.HandleGetUserInfo)
-		}
+	userGroup.UseMiddleware(middleware.JwtMiddleware())
 
-	}
+	// 获取当前用户信息
+	huma.Register(userGroup, huma.Operation{
+		OperationID: "getCurrentUserInfo",
+		Method:      http.MethodGet,
+		Path:        "/current",
+		Summary:     "GetCurrentUserInfo",
+		Description: "Get the current user's detailed information, including user ID, username, email, avatar, and permission information",
+		Tags:        []string{"user"},
+		Security: []map[string][]string{
+			{"jwtAuth": {}},
+		},
+	}, userHandler.HandleGetCurUserInfo)
+
+	// 更新用户信息
+	huma.Register(userGroup, huma.Operation{
+		OperationID: "updateUserInfo",
+		Method:      http.MethodPatch,
+		Path:        "/",
+		Summary:     "UpdateUserInfo",
+		Description: "Update the current user's information, including the username and other fields",
+		Tags:        []string{"user"},
+		Security: []map[string][]string{
+			{"jwtAuth": {}},
+		},
+	}, userHandler.HandleUpdateInfo)
+
+	// 获取指定用户信息
+	huma.Register(userGroup, huma.Operation{
+		OperationID: "getUserInfo",
+		Method:      http.MethodGet,
+		Path:        "/{userID}",
+		Summary:     "GetUserInfo",
+		Description: "Get the public information of the specified user by user ID, including user ID, username, and avatar",
+		Tags:        []string{"user"},
+		Security: []map[string][]string{
+			{"jwtAuth": {}},
+		},
+	}, userHandler.HandleGetUserInfo)
 }

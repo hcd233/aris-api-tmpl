@@ -1,29 +1,32 @@
 package router
 
 import (
-	"github.com/gofiber/fiber/v2"
+	"net/http"
+
+	"github.com/danielgtaylor/huma/v2"
 	"github.com/hcd233/go-backend-tmpl/internal/handler"
 )
 
-func initOauth2Router(r fiber.Router) {
-	githubOauth2Handler := handler.NewGithubOauth2Handler()
-	googleOauth2Handler := handler.NewGoogleOauth2Handler()
+func initOauth2Router(oauth2Group *huma.Group) {
+	oauth2Handler := handler.NewOauth2Handler()
 
-	oauth2Group := r.Group("/oauth2")
-	{
-		// GitHub OAuth2路由
-		githubRouter := oauth2Group.Group("/github")
-		{
-			githubRouter.Get("/login", githubOauth2Handler.HandleLogin)
-			githubRouter.Get("/callback", githubOauth2Handler.HandleCallback)
-		}
+	// OAuth2登录
+	huma.Register(oauth2Group, huma.Operation{
+		OperationID: "oauth2Login",
+		Method:      http.MethodGet,
+		Path:        "/{provider}/login",
+		Summary:     "OAuth2Login",
+		Description: "Get OAuth2 authorization URL for the specified provider (github/google/qq)",
+		Tags:        []string{"oauth2"},
+	}, oauth2Handler.HandleLogin)
 
-		// Google OAuth2路由
-		googleRouter := oauth2Group.Group("/google")
-		{
-			googleRouter.Get("/login", googleOauth2Handler.HandleLogin)
-			googleRouter.Get("/callback", googleOauth2Handler.HandleCallback)
-		}
-
-	}
+	// OAuth2回调
+	huma.Register(oauth2Group, huma.Operation{
+		OperationID: "oauth2Callback",
+		Method:      http.MethodGet,
+		Path:        "/{provider}/callback",
+		Summary:     "OAuth2Callback",
+		Description: "Handle OAuth2 callback with authorization code and state",
+		Tags:        []string{"oauth2"},
+	}, oauth2Handler.HandleCallback)
 }

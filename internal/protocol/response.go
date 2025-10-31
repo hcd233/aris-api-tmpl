@@ -8,3 +8,11 @@ type HTTPResponse struct {
 	Data  interface{} `json:"data"`
 	Error string      `json:"error,omitempty"`
 }
+
+// HumaHTTPResponse HTTP响应
+//
+//	author centonhuang
+//	update 2025-10-31 01:38:26
+type HumaHTTPResponse[BodyT any] struct {
+	Body BodyT `json:"data"`
+}
