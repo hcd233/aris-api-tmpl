@@ -22,7 +22,7 @@ import (
 //	author centonhuang
 //	update 2025-01-05 21:00:00
 type TokenService interface {
-	RefreshToken(ctx context.Context, req *dto.RefreshTokenRequest) (rsp *dto.RefreshTokenResponse, err error)
+	RefreshToken(ctx context.Context, req *dto.RefreshTokenReq) (rsp *dto.RefreshTokenResp, err error)
 }
 
 type tokenService struct {
@@ -53,8 +53,8 @@ func NewTokenService() TokenService {
 //	return err error
 //	author centonhuang
 //	update 2025-01-05 21:00:00
-func (s *tokenService) RefreshToken(ctx context.Context, req *dto.RefreshTokenRequest) (rsp *dto.RefreshTokenResponse, err error) {
-	rsp = &dto.RefreshTokenResponse{}
+func (s *tokenService) RefreshToken(ctx context.Context, req *dto.RefreshTokenReq) (rsp *dto.RefreshTokenResp, err error) {
+	rsp = &dto.RefreshTokenResp{}
 
 	logger := logger.WithCtx(ctx)
 	db := database.GetDBInstance(ctx)

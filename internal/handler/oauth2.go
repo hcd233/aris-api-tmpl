@@ -14,8 +14,8 @@ import (
 //	author centonhuang
 //	update 2025-01-05 21:00:00
 type Oauth2Handler interface {
-	HandleLogin(ctx context.Context, req *dto.LoginRequest) (*protocol.HumaHTTPResponse[*dto.LoginResponse], error)
-	HandleCallback(ctx context.Context, req *dto.CallbackRequest) (*protocol.HumaHTTPResponse[*dto.CallbackResponse], error)
+	HandleLogin(ctx context.Context, req *dto.LoginReq) (*protocol.HumaHTTPResponse[*dto.LoginResp], error)
+	HandleCallback(ctx context.Context, req *dto.CallbackReq) (*protocol.HumaHTTPResponse[*dto.CallbackResp], error)
 }
 
 type oauth2Handler struct{}
@@ -34,11 +34,11 @@ func NewOauth2Handler() Oauth2Handler {
 //	receiver h *oauth2Handler
 //	param ctx context.Context
 //	param req *dto.LoginRequest
-//	return *protocol.HumaHTTPResponse[*dto.LoginResponse]
+//	return *protocol.HumaHTTPResponse[*dto.LoginResp]
 //	return error
 //	author centonhuang
 //	update 2025-01-05 21:00:00
-func (h *oauth2Handler) HandleLogin(ctx context.Context, req *dto.LoginRequest) (*protocol.HumaHTTPResponse[*dto.LoginResponse], error) {
+func (h *oauth2Handler) HandleLogin(ctx context.Context, req *dto.LoginReq) (*protocol.HumaHTTPResponse[*dto.LoginResp], error) {
 	svc := h.getService(req.Provider)
 	return util.WrapHTTPResponse(svc.Login(ctx, req))
 }
@@ -48,11 +48,11 @@ func (h *oauth2Handler) HandleLogin(ctx context.Context, req *dto.LoginRequest) 
 //	receiver h *oauth2Handler
 //	param ctx context.Context
 //	param req *dto.CallbackRequest
-//	return *protocol.HumaHTTPResponse[*dto.CallbackResponse]
+//	return *protocol.HumaHTTPResponse[*dto.CallbackResp]
 //	return error
 //	author centonhuang
 //	update 2025-01-05 21:00:00
-func (h *oauth2Handler) HandleCallback(ctx context.Context, req *dto.CallbackRequest) (*protocol.HumaHTTPResponse[*dto.CallbackResponse], error) {
+func (h *oauth2Handler) HandleCallback(ctx context.Context, req *dto.CallbackReq) (*protocol.HumaHTTPResponse[*dto.CallbackResp], error) {
 	svc := h.getService(req.Provider)
 	return util.WrapHTTPResponse(svc.Callback(ctx, req))
 }

@@ -27,8 +27,8 @@ import (
 //	author centonhuang
 //	update 2025-01-05 21:00:00
 type Oauth2Service interface {
-	Login(ctx context.Context, req *dto.LoginRequest) (rsp *dto.LoginResponse, err error)
-	Callback(ctx context.Context, req *dto.CallbackRequest) (rsp *dto.CallbackResponse, err error)
+	Login(ctx context.Context, req *dto.LoginReq) (rsp *dto.LoginResp, err error)
+	Callback(ctx context.Context, req *dto.CallbackReq) (rsp *dto.CallbackResp, err error)
 }
 
 // oauth2Service OAuth2服务基础实现
@@ -74,8 +74,8 @@ func NewGoogleOauth2Service() Oauth2Service {
 //	return err error
 //	author centonhuang
 //	update 2025-01-05 21:00:00
-func (s *oauth2Service) Login(ctx context.Context, req *dto.LoginRequest) (rsp *dto.LoginResponse, err error) {
-	rsp = &dto.LoginResponse{}
+func (s *oauth2Service) Login(ctx context.Context, req *dto.LoginReq) (rsp *dto.LoginResp, err error) {
+	rsp = &dto.LoginResp{}
 
 	logger := logger.WithCtx(ctx)
 
@@ -96,8 +96,8 @@ func (s *oauth2Service) Login(ctx context.Context, req *dto.LoginRequest) (rsp *
 //	return err error
 //	author centonhuang
 //	update 2025-01-05 21:00:00
-func (s *oauth2Service) Callback(ctx context.Context, req *dto.CallbackRequest) (rsp *dto.CallbackResponse, err error) {
-	rsp = &dto.CallbackResponse{}
+func (s *oauth2Service) Callback(ctx context.Context, req *dto.CallbackReq) (rsp *dto.CallbackResp, err error) {
+	rsp = &dto.CallbackResp{}
 
 	logger := logger.WithCtx(ctx)
 	db := database.GetDBInstance(ctx)

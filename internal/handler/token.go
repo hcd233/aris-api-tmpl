@@ -14,7 +14,7 @@ import (
 //	author centonhuang
 //	update 2025-01-05 21:00:00
 type TokenHandler interface {
-	HandleRefreshToken(ctx context.Context, req *dto.RefreshTokenRequest) (*protocol.HumaHTTPResponse[*dto.RefreshTokenResponse], error)
+	HandleRefreshToken(ctx context.Context, req *dto.RefreshTokenReq) (*protocol.HumaHTTPResponse[*dto.RefreshTokenResp], error)
 }
 
 type tokenHandler struct {
@@ -37,10 +37,10 @@ func NewTokenHandler() TokenHandler {
 //	receiver h *tokenHandler
 //	param ctx context.Context
 //	param req *dto.RefreshTokenRequest
-//	return *protocol.HumaHTTPResponse[*dto.RefreshTokenResponse]
+//	return *protocol.HumaHTTPResponse[*dto.RefreshTokenResp]
 //	return error
 //	author centonhuang
 //	update 2025-01-05 21:00:00
-func (h *tokenHandler) HandleRefreshToken(ctx context.Context, req *dto.RefreshTokenRequest) (*protocol.HumaHTTPResponse[*dto.RefreshTokenResponse], error) {
+func (h *tokenHandler) HandleRefreshToken(ctx context.Context, req *dto.RefreshTokenReq) (*protocol.HumaHTTPResponse[*dto.RefreshTokenResp], error) {
 	return util.WrapHTTPResponse(h.svc.RefreshToken(ctx, req))
 }

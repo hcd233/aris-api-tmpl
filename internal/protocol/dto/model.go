@@ -12,13 +12,7 @@ type User struct {
 	Avatar    string `json:"avatar" doc:"URL or path to the user's avatar image"`
 	CreatedAt string `json:"createdAt,omitempty" doc:"Timestamp when the user account was created"`
 	LastLogin string `json:"lastLogin,omitempty" doc:"Timestamp of the user's last login"`
+	Permission string `json:"permission,omitempty" doc:"Permission level of the user"`
 }
 
-// CurUser represents the current authenticated user with additional permission information
-//
-//	author centonhuang
-//	update 2025-01-05 11:37:32
-type CurUser struct {
-	User
-	Permission string `json:"permission" doc:"Permission level of the user"`
-}
+
