@@ -6,8 +6,8 @@ package middleware
 import (
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/gofiber/fiber/v2"
-	"github.com/hcd233/go-backend-tmpl/internal/auth"
 	"github.com/hcd233/go-backend-tmpl/internal/constant"
+	"github.com/hcd233/go-backend-tmpl/internal/jwt"
 	"github.com/hcd233/go-backend-tmpl/internal/resource/database"
 	"github.com/hcd233/go-backend-tmpl/internal/resource/database/dao"
 )
@@ -21,7 +21,7 @@ import (
 //	@update 2025-10-31 03:10:19
 func JwtMiddleware() func(ctx huma.Context, next func(huma.Context)) {
 	dao := dao.GetUserDAO()
-	jwtAccessTokenSvc := auth.GetJwtAccessTokenSigner()
+	accessTokenSvc := jwt.GetAccessTokenSigner()
 
 	return func(ctx huma.Context, next func(huma.Context)) {
 		db := database.GetDBInstance(ctx.Context())
@@ -31,7 +31,7 @@ func JwtMiddleware() func(ctx huma.Context, next func(huma.Context)) {
 			ctx.SetStatus(fiber.StatusUnauthorized)
 			return
 		}
-		userID, err := jwtAccessTokenSvc.DecodeToken(tokenString)
+		userID, err := accessTokenSvc.DecodeToken(tokenString)
 		if err != nil {
 			ctx.SetStatus(fiber.StatusUnauthorized)
 			return

@@ -27,7 +27,7 @@ type UserService interface {
 }
 
 type userService struct {
-	userDAO    *dao.UserDAO
+	userDAO *dao.UserDAO
 }
 
 // NewUserService 创建用户服务
@@ -37,7 +37,7 @@ type userService struct {
 //	update 2025-01-04 21:03:45
 func NewUserService() UserService {
 	return &userService{
-		userDAO:    dao.GetUserDAO(),
+		userDAO: dao.GetUserDAO(),
 	}
 }
 
@@ -50,7 +50,7 @@ func NewUserService() UserService {
 //	return err error
 //	author centonhuang
 //	update 2025-01-04 21:04:03
-func (s *userService) GetCurUserInfo(ctx context.Context, req *dto.EmptyRequest) (rsp *dto.GetCurUserInfoResponse, err error) {
+func (s *userService) GetCurUserInfo(ctx context.Context, _ *dto.EmptyRequest) (rsp *dto.GetCurUserInfoResponse, err error) {
 	rsp = &dto.GetCurUserInfoResponse{}
 
 	userID := ctx.Value(constant.CtxKeyUserID).(uint)
