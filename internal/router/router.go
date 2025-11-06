@@ -47,6 +47,7 @@ func RegisterRouter(app *fiber.App) {
 	apiGroup := huma.NewGroup(api, "/api")
 
 	v1Group := huma.NewGroup(apiGroup, "/v1")
+
 	userGroup := huma.NewGroup(v1Group, "/user")
 	initUserRouter(userGroup)
 
