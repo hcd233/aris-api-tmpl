@@ -4,11 +4,8 @@ import (
 	"fmt"
 	"os"
 	"runtime/debug"
-	"time"
 
-	"github.com/bytedance/sonic"
-	"github.com/gofiber/fiber/v2"
-	"github.com/hcd233/go-backend-tmpl/internal/config"
+	"github.com/hcd233/go-backend-tmpl/internal/api"
 	"github.com/hcd233/go-backend-tmpl/internal/cron"
 	"github.com/hcd233/go-backend-tmpl/internal/logger"
 	"go.uber.org/zap"
@@ -49,14 +46,7 @@ var startServerCmd = &cobra.Command{
 		llm.InitOpenAIClient()
 		cron.InitCronJobs()
 
-		app := fiber.New(fiber.Config{
-			Prefork:      false,
-			ReadTimeout:  config.ReadTimeout,
-			WriteTimeout: config.WriteTimeout,
-			IdleTimeout:  120 * time.Second,
-			JSONEncoder:  sonic.Marshal,
-			JSONDecoder:  sonic.Unmarshal,
-		})
+		app := api.GetFiberApp()
 
 		// 中间件
 		app.Use(
