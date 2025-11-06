@@ -12,8 +12,18 @@ func init() {
 		OpenAPI: &huma.OpenAPI{
 			OpenAPI: "3.1.0",
 			Info: &huma.Info{
-				Title:   "Aris-blog",
+				Title:   "Go Backend Tmpl",
+				Description: "Go Backend Tmpl is a production-ready Go backend template built with modern technologies and best practices.",
 				Version: "1.0",
+				Contact: &huma.Contact{
+					Name:  "hcd233",
+					Email: "lvlvko233@qq.com",
+					URL:   "https://github.com/hcd233",
+				},
+				License: &huma.License{
+					Name: "Apache 2.0",
+					URL:  "https://www.apache.org/licenses/LICENSE-2.0.html",
+				},
 			},
 			Components: &huma.Components{
 				Schemas: huma.NewMapRegistry("#/components/schemas/", huma.DefaultSchemaNamer),
