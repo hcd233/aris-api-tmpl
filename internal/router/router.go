@@ -15,7 +15,7 @@ import (
 //	param app *fiber.App
 //	author centonhuang
 //	update 2025-01-04 15:32:40
-func RegisterRouter(app *fiber.App){
+func RegisterRouter(app *fiber.App) {
 	pingService := handler.NewPingHandler()
 
 	api := humafiber.New(app, huma.Config{
@@ -44,7 +44,9 @@ func RegisterRouter(app *fiber.App){
 		DefaultFormat: "application/json",
 	})
 
-	v1Group := huma.NewGroup(api, "/v1")
+	apiGroup := huma.NewGroup(api, "/api")
+
+	v1Group := huma.NewGroup(apiGroup, "/v1")
 	userGroup := huma.NewGroup(v1Group, "/user")
 	initUserRouter(userGroup)
 
@@ -55,12 +57,11 @@ func RegisterRouter(app *fiber.App){
 	initOauth2Router(oauth2Group)
 
 	huma.Register(api, huma.Operation{
-		OperationID: "ping",
+		OperationID: "healthCheck",
 		Method:      http.MethodGet,
-		Path:        "/",
-		Summary:     "Ping",
+		Path:        "/health",
+		Summary:     "HealthCheck",
 		Description: "Check service if available.",
-		Tags:        []string{"ping"},
+		Tags:        []string{"health"},
 	}, pingService.HandlePing)
-
 }
