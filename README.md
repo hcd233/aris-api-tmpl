@@ -1,4 +1,4 @@
-# Go Backend Template / Go 后端模板
+# Aris API Tmpl
 
 [English](#english) | [中文](#中文)
 
@@ -20,7 +20,7 @@ A production-ready Go backend template built with modern technologies and best p
 - 📦 **Object Storage**: Support for both MinIO and Tencent COS
 - 🔴 **Caching**: Redis integration for high-performance caching
 - 🤖 **AI Integration**: OpenAI client integration
-- 📝 **API Documentation**: Auto-generated Swagger documentation
+- 📝 **API Documentation**: Auto-generated OpenAPI V3 documentation
 - 🔒 **Middleware**: Comprehensive middleware stack including:
   - JWT authentication
   - CORS
@@ -36,47 +36,46 @@ A production-ready Go backend template built with modern technologies and best p
 
 ### 🛠️ Tech Stack
 
-- **Framework**: Fiber v2
+- **Framework**: Fiber v2 + Huma
 - **Language**: Go 1.25.1
 - **Database**: PostgreSQL (with GORM)
 - **Cache**: Redis
 - **Object Storage**: MinIO / Tencent COS
 - **Authentication**: JWT, OAuth2 (GitHub, Google)
-- **API Docs**: Swagger/OpenAPI
+- **API Docs**: OpenAPI V3
 - **CLI**: Cobra
 - **Configuration**: Viper
 - **Logging**: Zap with Lumberjack rotation
-- **JSON**: Sonic (high performance)
+- **JSON**: Sonic
 
 ### 📁 Project Structure
 
 ```
-aris-api-tmpl/
-├── cmd/                    # Command line interface
-│   ├── server.go          # Server start command
-│   ├── database.go        # Database management commands
-│   └── root.go            # Root command
-├── internal/
-│   ├── auth/              # JWT authentication logic
-│   ├── config/            # Configuration management
-│   ├── constant/          # Constants
-│   ├── cron/              # Scheduled tasks
-│   ├── handler/           # HTTP request handlers
-│   ├── logger/            # Logging utilities
-│   ├── middleware/        # HTTP middlewares
-│   ├── protocol/          # Request/response protocols
-│   ├── resource/          # External resource integrations
-│   │   ├── cache/         # Redis cache
-│   │   ├── database/      # PostgreSQL + GORM
-│   │   ├── llm/           # OpenAI client
-│   │   └── storage/       # Object storage (MinIO/COS)
-│   ├── router/            # Route definitions
-│   ├── service/           # Business logic
-│   └── util/              # Utility functions
-├── docker/                # Docker configuration files
-├── env/                   # Environment variable templates
-├── docs/                  # Swagger documentation
-└── main.go               # Application entry point
+.
+├── cmd                   # Command Line Interface 
+├── docker                # Docker configuration
+├── env                   # Environment variable template
+├── go.mod
+├── go.sum
+├── internal              # Internal implementation
+│   ├── api               # API related
+│   ├── common            # Common constants/enums/models
+│   ├── config            # Configuration management
+│   ├── cron              # Cron jobs
+│   ├── dto               # Data transfer objects
+│   ├── handler           # Handlers
+│   ├── infrastructure    # Infrastructure
+│   ├── jwt               # JWT related
+│   ├── lock              # Locks
+│   ├── logger            # Logger
+│   ├── middleware        # Middleware
+│   ├── oauth2            # OAuth2 related
+│   ├── router            # Router
+│   ├── service           # Service
+│   └── util              # Utility functions
+├── LICENSE
+├── main.go
+└── README.md
 ```
 
 ### 🚀 Quick Start
@@ -151,9 +150,9 @@ go run main.go server start --host localhost --port 8080
 
 ### 📚 API Documentation
 
-Once the server is running, access the Swagger documentation at:
+Once the server is running, access the OpenAPI V3 documentation at:
 ```
-http://localhost:8080/swagger/
+http://localhost:8080/docs
 ```
 
 ### 🔑 Available Commands
@@ -182,8 +181,9 @@ The API supports multiple authentication methods:
 
 ### 🛡️ API Endpoints
 
-- `GET /` - Health check
-- `GET /swagger/*` - API documentation
+- `GET /health` - Health check
+- `GET /ssehealth` - SSE health check
+- `GET /docs` - API documentation
 - `GET /v1/oauth2/{provider}/login` - OAuth2 login
 - `GET /v1/oauth2/{provider}/callback` - OAuth2 callback
 - `POST /v1/token/refresh` - Refresh JWT token
@@ -201,11 +201,6 @@ go build -o aris-api-tmpl main.go
 Run tests (if available):
 ```bash
 go test ./...
-```
-
-Generate Swagger docs:
-```bash
-swag init
 ```
 
 ### 📝 Environment Variables
@@ -251,7 +246,7 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 - 📦 **对象存储**: 支持 MinIO 和腾讯云 COS
 - 🔴 **缓存**: Redis 集成,提供高性能缓存
 - 🤖 **AI 集成**: OpenAI 客户端集成
-- 📝 **API 文档**: 自动生成的 Swagger 文档
+- 📝 **API 文档**: 自动生成的 OpenAPI V3 文档
 - 🔒 **中间件**: 完善的中间件栈,包括:
   - JWT 身份验证
   - CORS 跨域处理
@@ -267,47 +262,46 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ### 🛠️ 技术栈
 
-- **框架**: Fiber v2
+- **框架**: Fiber v2 + Huma
 - **语言**: Go 1.25.1
 - **数据库**: PostgreSQL (使用 GORM)
 - **缓存**: Redis
 - **对象存储**: MinIO / 腾讯云 COS
 - **身份验证**: JWT, OAuth2 (GitHub, Google)
-- **API 文档**: Swagger/OpenAPI
+- **API 文档**: OpenAPI V3
 - **CLI**: Cobra
 - **配置管理**: Viper
 - **日志**: Zap 配合 Lumberjack 日志轮转
-- **JSON**: Sonic (高性能)
+- **JSON**: Sonic
 
 ### 📁 项目结构
 
 ```
-aris-api-tmpl/
-├── cmd/                    # 命令行接口
-│   ├── server.go          # 服务器启动命令
-│   ├── database.go        # 数据库管理命令
-│   └── root.go            # 根命令
-├── internal/
-│   ├── auth/              # JWT 身份验证逻辑
-│   ├── config/            # 配置管理
-│   ├── constant/          # 常量定义
-│   ├── cron/              # 定时任务
-│   ├── handler/           # HTTP 请求处理器
-│   ├── logger/            # 日志工具
-│   ├── middleware/        # HTTP 中间件
-│   ├── protocol/          # 请求/响应协议
-│   ├── resource/          # 外部资源集成
-│   │   ├── cache/         # Redis 缓存
-│   │   ├── database/      # PostgreSQL + GORM
-│   │   ├── llm/           # OpenAI 客户端
-│   │   └── storage/       # 对象存储 (MinIO/COS)
-│   ├── router/            # 路由定义
-│   ├── service/           # 业务逻辑
-│   └── util/              # 工具函数
-├── docker/                # Docker 配置文件
-├── env/                   # 环境变量模板
-├── docs/                  # Swagger 文档
-└── main.go               # 应用程序入口
+.
+├── cmd                   # 命令行接口
+├── docker                # Docker配置
+├── env                   # 环境变量模板
+├── go.mod
+├── go.sum
+├── internal              # 内部实现
+│   ├── api               # API 相关
+│   ├── common            # 公共常量/枚举/模型
+│   ├── config            # 配置管理
+│   ├── cron              # 定时任务
+│   ├── dto               # 数据传输对象
+│   ├── handler           # 处理器
+│   ├── infrastructure    # 基础设施
+│   ├── jwt               # JWT 相关
+│   ├── lock              # 锁
+│   ├── logger            # 日志
+│   ├── middleware        # 中间件
+│   ├── oauth2            # OAuth2 相关
+│   ├── router            # 路由
+│   ├── service           # 服务
+│   └── util              # 工具函数
+├── LICENSE
+├── main.go
+└── README.md
 ```
 
 ### 🚀 快速开始
@@ -382,9 +376,9 @@ go run main.go server start --host localhost --port 8080
 
 ### 📚 API 文档
 
-服务器运行后,访问 Swagger 文档:
+服务器运行后,访问 OpenAPI V3 文档:
 ```
-http://localhost:8080/swagger/
+http://localhost:8080/docs
 ```
 
 ### 🔑 可用命令
@@ -413,8 +407,9 @@ API 支持多种身份验证方式:
 
 ### 🛡️ API 端点
 
-- `GET /` - 健康检查
-- `GET /swagger/*` - API 文档
+- `GET /health` - 健康检查
+- `GET /ssehealth` - SSE 健康检查
+- `GET /docs` - API 文档
 - `GET /v1/oauth2/{provider}/login` - OAuth2 登录
 - `GET /v1/oauth2/{provider}/callback` - OAuth2 回调
 - `POST /v1/token/refresh` - 刷新 JWT 令牌
@@ -434,10 +429,6 @@ go build -o aris-api-tmpl main.go
 go test ./...
 ```
 
-生成 Swagger 文档:
-```bash
-swag init
-```
 
 ### 📝 环境变量
 
