@@ -10,9 +10,9 @@ import (
 	"github.com/hcd233/aris-api-tmpl/internal/middleware"
 	"go.uber.org/zap"
 
-	"github.com/hcd233/aris-api-tmpl/internal/resource/cache"
-	"github.com/hcd233/aris-api-tmpl/internal/resource/database"
-	"github.com/hcd233/aris-api-tmpl/internal/resource/storage"
+	"github.com/hcd233/aris-api-tmpl/internal/infrastructure/cache"
+	"github.com/hcd233/aris-api-tmpl/internal/infrastructure/database"
+	"github.com/hcd233/aris-api-tmpl/internal/infrastructure/storage"
 	"github.com/hcd233/aris-api-tmpl/internal/router"
 	"github.com/samber/lo"
 	"github.com/spf13/cobra"

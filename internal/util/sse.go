@@ -4,16 +4,14 @@ import (
 	"bufio"
 	"context"
 	"fmt"
-	"strconv"
 
 	"github.com/bytedance/sonic"
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/danielgtaylor/huma/v2/adapters/humafiber"
 	"github.com/hcd233/aris-api-tmpl/internal/common/enum"
 	"github.com/hcd233/aris-api-tmpl/internal/common/model"
+	"github.com/hcd233/aris-api-tmpl/internal/dto"
 	"github.com/hcd233/aris-api-tmpl/internal/logger"
-	"github.com/hcd233/aris-api-tmpl/internal/protocol"
-	"github.com/hcd233/aris-api-tmpl/internal/protocol/dto"
 	"github.com/samber/lo"
 	"github.com/valyala/fasthttp"
 	"go.uber.org/zap"
@@ -44,7 +42,7 @@ func WrapErrorSSE(ctx context.Context, err *model.Error) (rsp *huma.StreamRespon
 
 func writeSSEErrorResponse(ctx context.Context, w *bufio.Writer, err *model.Error) {
 	logger := logger.WithCtx(ctx)
-	rsp := &protocol.SSEResponse{
+	rsp := &dto.SSEResponse{
 		DataType: enum.SSEDataTypeError,
 		Status:   enum.SSEStatusError,
 		Data:     &dto.CommonRsp{Error: err},
@@ -52,31 +50,5 @@ func writeSSEErrorResponse(ctx context.Context, w *bufio.Writer, err *model.Erro
 	fmt.Fprintf(w, "data: %s\n\n", lo.Must1(sonic.Marshal(rsp)))
 	if err := w.Flush(); err != nil {
 		logger.Error("[WriteErrorResponse] flush error", zap.Error(err))
-	}
-}
-
-func writeSSEHeartBeatResponse(ctx context.Context, w *bufio.Writer, heartBeatCount int) {
-	logger := logger.WithCtx(ctx)
-	rsp := &protocol.SSEResponse{
-		DataType: enum.SSEDataTypeHeartBeat,
-		Status:   enum.SSEStatusStreaming,
-		Data:     strconv.Itoa(heartBeatCount),
-	}
-	fmt.Fprintf(w, "data: %s\n\n", lo.Must1(sonic.Marshal(rsp)))
-	if err := w.Flush(); err != nil {
-		logger.Error("[WriteHeartBeatResponse] flush error", zap.Error(err))
-	}
-}
-
-func writeSSENoneResponse(ctx context.Context, w *bufio.Writer, status enum.SSEStatus) {
-	logger := logger.WithCtx(ctx)
-	rsp := &protocol.SSEResponse{
-		DataType: enum.SSEDataTypeNone,
-		Status:   status,
-		Data:     nil,
-	}
-	fmt.Fprintf(w, "data: %s\n\n", lo.Must1(sonic.Marshal(rsp)))
-	if err := w.Flush(); err != nil {
-		logger.Error("[WriteNoneResponse] flush error", zap.Error(err))
 	}
 }

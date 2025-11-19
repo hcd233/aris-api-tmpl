@@ -1,8 +1,8 @@
 package cmd
 
 import (
-	"github.com/hcd233/aris-api-tmpl/internal/resource/database"
-	"github.com/hcd233/aris-api-tmpl/internal/resource/database/model"
+	"github.com/hcd233/aris-api-tmpl/internal/infrastructure/database"
+	"github.com/hcd233/aris-api-tmpl/internal/infrastructure/database/model"
 	"github.com/samber/lo"
 	"github.com/spf13/cobra"
 )

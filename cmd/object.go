@@ -3,9 +3,9 @@ package cmd
 import (
 	"context"
 
+	"github.com/hcd233/aris-api-tmpl/internal/infrastructure/storage"
+	objdao "github.com/hcd233/aris-api-tmpl/internal/infrastructure/storage/obj_dao"
 	"github.com/hcd233/aris-api-tmpl/internal/logger"
-	"github.com/hcd233/aris-api-tmpl/internal/resource/storage"
-	objdao "github.com/hcd233/aris-api-tmpl/internal/resource/storage/obj_dao"
 	"github.com/samber/lo"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"

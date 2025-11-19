@@ -8,10 +8,10 @@ import (
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/hcd233/aris-api-tmpl/internal/common/constant"
+	"github.com/hcd233/aris-api-tmpl/internal/infrastructure/database"
+	"github.com/hcd233/aris-api-tmpl/internal/infrastructure/database/dao"
+	"github.com/hcd233/aris-api-tmpl/internal/infrastructure/database/model"
 	"github.com/hcd233/aris-api-tmpl/internal/jwt"
-	"github.com/hcd233/aris-api-tmpl/internal/resource/database"
-	"github.com/hcd233/aris-api-tmpl/internal/resource/database/dao"
-	"github.com/hcd233/aris-api-tmpl/internal/resource/database/model"
 	"github.com/hcd233/aris-api-tmpl/internal/util"
 	"github.com/samber/lo"
 )

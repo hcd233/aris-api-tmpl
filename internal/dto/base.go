@@ -1,4 +1,4 @@
-package protocol
+package dto
 
 import "github.com/hcd233/aris-api-tmpl/internal/common/enum"
 

@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/hcd233/aris-api-tmpl/internal/resource/cache"
+	"github.com/hcd233/aris-api-tmpl/internal/infrastructure/cache"
 	"github.com/redis/go-redis/v9"
 )
 

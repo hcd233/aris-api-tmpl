@@ -1,7 +1,7 @@
 package dao
 
 import (
-	"github.com/hcd233/aris-api-tmpl/internal/resource/database/model"
+	"github.com/hcd233/aris-api-tmpl/internal/infrastructure/database/model"
 	"gorm.io/gorm"
 )
 
