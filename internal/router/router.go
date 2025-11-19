@@ -2,54 +2,48 @@
 package router
 
 import (
-	"net/http"
-
 	"github.com/danielgtaylor/huma/v2"
-	"github.com/danielgtaylor/huma/v2/adapters/humafiber"
 	"github.com/gofiber/fiber/v2"
-	"github.com/hcd233/go-backend-tmpl/internal/handler"
+	"github.com/hcd233/aris-api-tmpl/internal/api"
 )
 
-// RegisterRouter 注册路由
+// RegisterDocsRouter 注册文档路由
 //
-//	param app *fiber.App
-//	author centonhuang
-//	update 2025-01-04 15:32:40
-func RegisterRouter(app *fiber.App) {
-	pingService := handler.NewPingHandler()
-
-	api := humafiber.New(app, huma.Config{
-		OpenAPI: &huma.OpenAPI{
-			OpenAPI: "3.1.0",
-			Info: &huma.Info{
-				Title:   "Aris-blog",
-				Version: "1.0",
-			},
-			Components: &huma.Components{
-				Schemas: huma.NewMapRegistry("#/components/schemas/", huma.DefaultSchemaNamer),
-				SecuritySchemes: map[string]*huma.SecurityScheme{
-					"jwtAuth": {
-						Type:        "apiKey",
-						Name:        "Authorization",
-						In:          "header",
-						Description: "JWT Authentication，Please pass the JWT token in the Authorization header.",
-					},
-				},
-			},
-		},
-		OpenAPIPath:   "/openapi",
-		DocsPath:      "/docs",
-		SchemasPath:   "/schemas",
-		Formats:       huma.DefaultFormats,
-		DefaultFormat: "application/json",
+//	@author centonhuang
+//	@update 2025-11-10 17:26:08
+func RegisterDocsRouter() {
+	app := api.GetFiberApp()
+	app.Get("/docs", func(c *fiber.Ctx) error {
+		html := `<!doctype html>
+<html>
+  <head>
+    <title>Aris Mem API Reference</title>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1" />
+  </head>
+  <body>
+    <script
+      id="api-reference"
+      data-url="/openapi.json"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference"></script>
+  </body>
+</html>`
+		return c.Type("html").SendString(html)
 	})
+}
 
+// RegisterAPIRouter 注册API路由
+//
+//	@author centonhuang
+//	@update 2025-11-10 17:26:08
+func RegisterAPIRouter() {
+	api := api.GetHumaAPI()
 	apiGroup := huma.NewGroup(api, "/api")
-
 	v1Group := huma.NewGroup(apiGroup, "/v1")
 
-	userGroup := huma.NewGroup(v1Group, "/user")
-	initUserRouter(userGroup)
+	initHealthRouter(api)
 
 	tokenGroup := huma.NewGroup(v1Group, "/token")
 	initTokenRouter(tokenGroup)
@@ -57,12 +51,6 @@ func RegisterRouter(app *fiber.App) {
 	oauth2Group := huma.NewGroup(v1Group, "/oauth2")
 	initOauth2Router(oauth2Group)
 
-	huma.Register(api, huma.Operation{
-		OperationID: "healthCheck",
-		Method:      http.MethodGet,
-		Path:        "/health",
-		Summary:     "HealthCheck",
-		Description: "Check service if available.",
-		Tags:        []string{"health"},
-	}, pingService.HandlePing)
+	userGroup := huma.NewGroup(v1Group, "/user")
+	initUserRouter(userGroup)
 }

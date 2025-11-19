@@ -1,11 +1,10 @@
 package api
 
 import (
-	"time"
-
 	"github.com/bytedance/sonic"
 	"github.com/gofiber/fiber/v2"
-	"github.com/hcd233/go-backend-tmpl/internal/config"
+	"github.com/hcd233/aris-api-tmpl/internal/common/constant"
+	"github.com/hcd233/aris-api-tmpl/internal/config"
 )
 
 var fiberApp *fiber.App
@@ -24,7 +23,7 @@ func init() {
 		Prefork:      false,
 		ReadTimeout:  config.ReadTimeout,
 		WriteTimeout: config.WriteTimeout,
-		IdleTimeout:  120 * time.Second,
+		IdleTimeout:  constant.IdleTimeout,
 		JSONEncoder:  sonic.Marshal,
 		JSONDecoder:  sonic.Unmarshal,
 	})

@@ -4,19 +4,18 @@ import (
 	"net/http"
 
 	"github.com/danielgtaylor/huma/v2"
-	"github.com/hcd233/go-backend-tmpl/internal/handler"
+	"github.com/hcd233/aris-api-tmpl/internal/handler"
 )
 
-func initTokenRouter(tokenGroup *huma.Group) {
+func initTokenRouter(tokenGroup huma.API) {
 	tokenHandler := handler.NewTokenHandler()
 
-	// 刷新令牌
 	huma.Register(tokenGroup, huma.Operation{
 		OperationID: "refreshToken",
 		Method:      http.MethodPost,
 		Path:        "/refresh",
 		Summary:     "RefreshToken",
 		Description: "Refresh the access token using a refresh token",
-		Tags:        []string{"token"},
+		Tags:        []string{"Token"},
 	}, tokenHandler.HandleRefreshToken)
 }

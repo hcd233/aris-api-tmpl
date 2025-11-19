@@ -4,51 +4,38 @@ import (
 	"net/http"
 
 	"github.com/danielgtaylor/huma/v2"
-	"github.com/hcd233/go-backend-tmpl/internal/handler"
-	"github.com/hcd233/go-backend-tmpl/internal/middleware"
+	"github.com/hcd233/aris-api-tmpl/internal/common/enum"
+	"github.com/hcd233/aris-api-tmpl/internal/handler"
+	"github.com/hcd233/aris-api-tmpl/internal/middleware"
 )
 
-func initUserRouter(userGroup *huma.Group) {
+func initUserRouter(userGroup huma.API) {
 	userHandler := handler.NewUserHandler()
 
 	userGroup.UseMiddleware(middleware.JwtMiddleware())
 
-	// 获取当前用户信息
 	huma.Register(userGroup, huma.Operation{
-		OperationID: "getCurrentUserInfo",
+		OperationID: "getCurrentUser",
 		Method:      http.MethodGet,
 		Path:        "/current",
-		Summary:     "GetCurrentUserInfo",
+		Summary:     "GetCurrentUser",
 		Description: "Get the current user's detailed information, including user ID, username, email, avatar, and permission information",
-		Tags:        []string{"user"},
+		Tags:        []string{"User"},
 		Security: []map[string][]string{
 			{"jwtAuth": {}},
 		},
-	}, userHandler.HandleGetCurUserInfo)
+	}, userHandler.HandleGetCurUser)
 
-	// 更新用户信息
 	huma.Register(userGroup, huma.Operation{
-		OperationID: "updateUserInfo",
+		OperationID: "updateUser",
 		Method:      http.MethodPatch,
 		Path:        "/",
-		Summary:     "UpdateUserInfo",
+		Summary:     "UpdateUser",
 		Description: "Update the current user's information, including the username and other fields",
-		Tags:        []string{"user"},
+		Tags:        []string{"User"},
 		Security: []map[string][]string{
 			{"jwtAuth": {}},
 		},
-	}, userHandler.HandleUpdateInfo)
-
-	// 获取指定用户信息
-	huma.Register(userGroup, huma.Operation{
-		OperationID: "getUserInfo",
-		Method:      http.MethodGet,
-		Path:        "/{userID}",
-		Summary:     "GetUserInfo",
-		Description: "Get the public information of the specified user by user ID, including user ID, username, and avatar",
-		Tags:        []string{"user"},
-		Security: []map[string][]string{
-			{"jwtAuth": {}},
-		},
-	}, userHandler.HandleGetUserInfo)
+		Middlewares: huma.Middlewares{middleware.LimitUserPermissionMiddleware("updateUser", enum.PermissionUser)},
+	}, userHandler.HandleUpdateUser)
 }

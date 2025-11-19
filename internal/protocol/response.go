@@ -1,18 +1,30 @@
 package protocol
 
-// HTTPResponse 标准响应体
-//
-//	author centonhuang
-//	update 2024-09-16 03:41:34
-type HTTPResponse struct {
-	Data  interface{} `json:"data"`
-	Error string      `json:"error,omitempty"`
-}
+import "github.com/hcd233/aris-api-tmpl/internal/common/enum"
 
-// HumaHTTPResponse HTTP响应
+// HTTPResponse HTTP响应
 //
 //	author centonhuang
 //	update 2025-10-31 01:38:26
-type HumaHTTPResponse[BodyT any] struct {
+type HTTPResponse[BodyT any] struct {
 	Body BodyT `json:"data"`
+}
+
+// RedirectResponse 重定向响应
+//
+//	@author centonhuang
+//	@update 2025-11-02 04:01:39
+type RedirectResponse struct {
+	Status int    `json:"status" doc:"Status code"`
+	Url    string `json:"url" doc:"URL for redirect"`
+}
+
+// SSEResponse SSE响应
+//
+//	@author centonhuang
+//	@update 2025-11-08 04:20:42
+type SSEResponse struct {
+	DataType enum.SSEDataType `json:"dataType" doc:"Data type"`
+	Status   enum.SSEStatus   `json:"status" doc:"Status"`
+	Data     any              `json:"data" doc:"Data"`
 }

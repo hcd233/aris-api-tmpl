@@ -52,7 +52,7 @@ services:
     
 
   db-migrate:
-    image: ghcr.io/hcd233/go-backend-tmpl:master
+    image: ghcr.io/hcd233/aris-api-tmpl:master
     container_name: db-migrate
     restart: no
     env_file:
@@ -60,11 +60,11 @@ services:
     depends_on:
       postgresql:
         condition: service_healthy
-    command: ["/app/go-backend-tmpl", "database", "migrate"]
+    command: ["/app/aris-api-tmpl", "database", "migrate"]
 
-  go-backend-tmpl:
-    image: ghcr.io/hcd233/go-backend-tmpl:master
-    container_name: go-backend-tmpl
+  aris-api-tmpl:
+    image: ghcr.io/hcd233/aris-api-tmpl:master
+    container_name: aris-api-tmpl
     restart: always
     ports:
       - 8170:8080
@@ -85,7 +85,7 @@ services:
       timeout: 5s
       retries: 5
 
-    command: ["/app/go-backend-tmpl", "server", "start", "--host", "0.0.0.0", "--port", "8080"]
+    command: ["/app/aris-api-tmpl", "server", "start", "--host", "0.0.0.0", "--port", "8080"]
 
 volumes:
   postgresql-data:

@@ -4,13 +4,13 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/bytedance/sonic"
 	"github.com/danielgtaylor/huma/v2"
-	"github.com/hcd233/go-backend-tmpl/internal/api"
-	"github.com/hcd233/go-backend-tmpl/internal/constant"
-	"github.com/hcd233/go-backend-tmpl/internal/logger"
-	"github.com/hcd233/go-backend-tmpl/internal/protocol"
-	"github.com/hcd233/go-backend-tmpl/internal/resource/cache"
-	"github.com/hcd233/go-backend-tmpl/internal/util"
+	"github.com/hcd233/aris-api-tmpl/internal/common/constant"
+	"github.com/hcd233/aris-api-tmpl/internal/logger"
+	"github.com/hcd233/aris-api-tmpl/internal/protocol/dto"
+	"github.com/hcd233/aris-api-tmpl/internal/resource/cache"
+	"github.com/hcd233/aris-api-tmpl/internal/util"
 	"github.com/samber/lo"
 	"github.com/ulule/limiter/v3"
 	"github.com/ulule/limiter/v3/drivers/store/redis"
@@ -57,8 +57,7 @@ func RateLimiterMiddleware(serviceName, key string, period time.Duration, limit 
 				keyValue = key
 				value = fmt.Sprintf("%v", ctxValue)
 			} else {
-				_, err := util.WrapHTTPResponse[any](nil, protocol.ErrUnauthorized)
-				huma.WriteErr(api.GetHumaAPI(), ctx, err.GetStatus(), err.Error(), err)
+				lo.Must0(util.WriteErrorResponse(ctx.BodyWriter(), constant.ErrUnauthorized))
 				return
 			}
 		}
@@ -69,8 +68,8 @@ func RateLimiterMiddleware(serviceName, key string, period time.Duration, limit 
 		result, err := instance.Get(ctx.Context(), limiterKey)
 		if err != nil {
 			logger.WithCtx(ctx.Context()).Error("[RateLimiterMiddleware] failed to get rate limit", zap.Error(err))
-			_, err := util.WrapHTTPResponse[any](nil, protocol.ErrInternalError)
-			huma.WriteErr(api.GetHumaAPI(), ctx, err.GetStatus(), err.Error(), err)
+			rsp := &dto.CommonRsp{Error: constant.ErrInternalError}
+			_ = lo.Must1(ctx.BodyWriter().Write(lo.Must1(sonic.Marshal(rsp))))
 			return
 		}
 
@@ -83,11 +82,9 @@ func RateLimiterMiddleware(serviceName, key string, period time.Duration, limit 
 			}
 
 			logger.WithCtx(ctx.Context()).Error("[RateLimiterMiddleware] rate limit reached", fields...)
-			_, err := util.WrapHTTPResponse[any](nil, protocol.ErrTooManyRequests)
-			huma.WriteErr(api.GetHumaAPI(), ctx, err.GetStatus(), err.Error(), err)
+			lo.Must0(util.WriteErrorResponse(ctx.BodyWriter(), constant.ErrTooManyRequests))
 			return
 		}
-
 		next(ctx)
 	}
 }

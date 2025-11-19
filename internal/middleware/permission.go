@@ -2,39 +2,37 @@ package middleware
 
 import (
 	"github.com/danielgtaylor/huma/v2"
-	"github.com/hcd233/go-backend-tmpl/internal/api"
-	"github.com/hcd233/go-backend-tmpl/internal/constant"
-	"github.com/hcd233/go-backend-tmpl/internal/logger"
-	"github.com/hcd233/go-backend-tmpl/internal/protocol"
-	"github.com/hcd233/go-backend-tmpl/internal/resource/database/model"
-	"github.com/hcd233/go-backend-tmpl/internal/util"
+	"github.com/hcd233/aris-api-tmpl/internal/common/constant"
+	"github.com/hcd233/aris-api-tmpl/internal/common/enum"
+	"github.com/hcd233/aris-api-tmpl/internal/logger"
+	"github.com/hcd233/aris-api-tmpl/internal/util"
+	"github.com/samber/lo"
 	"go.uber.org/zap"
 )
 
 // LimitUserPermissionMiddleware 限制用户权限中间件
-//	@param serviceName string 
-//	@param requiredPermission model.Permission 
-//	@return ctx huma.Context 
-//	@return next func(huma.Context) 
-//	@return func(ctx huma.Context, next func(huma.Context)) 
-//	@author centonhuang 
-//	@update 2025-11-02 04:16:51 
-func LimitUserPermissionMiddleware(serviceName string, requiredPermission model.Permission) func(ctx huma.Context, next func(huma.Context)) {
+//
+//	@param serviceName string
+//	@param requiredPermission model.Permission
+//	@return ctx huma.Context
+//	@return next func(huma.Context)
+//	@return func(ctx huma.Context, next func(huma.Context))
+//	@author centonhuang
+//	@update 2025-11-02 04:16:51
+func LimitUserPermissionMiddleware(serviceName string, requiredPermission enum.Permission) func(ctx huma.Context, next func(huma.Context)) {
 	return func(ctx huma.Context, next func(huma.Context)) {
-		permission, ok := ctx.Context().Value(constant.CtxKeyPermission).(model.Permission)
+		permission, ok := ctx.Context().Value(constant.CtxKeyPermission).(enum.Permission)
 		if !ok {
-			_, err := util.WrapHTTPResponse[any](nil, protocol.ErrNoPermission)
-			huma.WriteErr(api.GetHumaAPI(), ctx, err.GetStatus(), err.Error(), err)
+			lo.Must0(util.WriteErrorResponse(ctx.BodyWriter(), constant.ErrNoPermission))
 			return
 		}
 
-		if model.PermissionLevelMapping[permission] < model.PermissionLevelMapping[requiredPermission] {
+		if permission.Level() < requiredPermission.Level() {
 			logger.WithCtx(ctx.Context()).Info("[LimitUserPermissionMiddleware] permission denied",
 				zap.String("serviceName", serviceName),
 				zap.String("requiredPermission", string(requiredPermission)),
 				zap.String("permission", string(permission)))
-			_, err := util.WrapHTTPResponse[any](nil, protocol.ErrNoPermission)
-			huma.WriteErr(api.GetHumaAPI(), ctx, err.GetStatus(), err.Error(), err)
+			lo.Must0(util.WriteErrorResponse(ctx.BodyWriter(), constant.ErrNoPermission))
 			return
 		}
 

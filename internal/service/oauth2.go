@@ -6,18 +6,19 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/hcd233/go-backend-tmpl/internal/config"
-	"github.com/hcd233/go-backend-tmpl/internal/jwt"
-	"github.com/hcd233/go-backend-tmpl/internal/logger"
-	"github.com/hcd233/go-backend-tmpl/internal/protocol"
-	"github.com/hcd233/go-backend-tmpl/internal/protocol/dto"
-	"github.com/hcd233/go-backend-tmpl/internal/resource/database"
-	"github.com/hcd233/go-backend-tmpl/internal/resource/database/dao"
-	"github.com/hcd233/go-backend-tmpl/internal/resource/database/model"
-	objdao "github.com/hcd233/go-backend-tmpl/internal/resource/storage/obj_dao"
+	"github.com/hcd233/aris-api-tmpl/internal/common/constant"
+	"github.com/hcd233/aris-api-tmpl/internal/common/enum"
+	"github.com/hcd233/aris-api-tmpl/internal/config"
+	"github.com/hcd233/aris-api-tmpl/internal/jwt"
+	"github.com/hcd233/aris-api-tmpl/internal/logger"
+	"github.com/hcd233/aris-api-tmpl/internal/protocol/dto"
+	"github.com/hcd233/aris-api-tmpl/internal/resource/database"
+	"github.com/hcd233/aris-api-tmpl/internal/resource/database/dao"
+	"github.com/hcd233/aris-api-tmpl/internal/resource/database/model"
+	objdao "github.com/hcd233/aris-api-tmpl/internal/resource/storage/obj_dao"
 
-	"github.com/hcd233/go-backend-tmpl/internal/oauth2"
-	"github.com/hcd233/go-backend-tmpl/internal/util"
+	"github.com/hcd233/aris-api-tmpl/internal/oauth2"
+	"github.com/hcd233/aris-api-tmpl/internal/util"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
@@ -28,15 +29,14 @@ import (
 //	update 2025-01-05 21:00:00
 type Oauth2Service interface {
 	Login(ctx context.Context, req *dto.LoginReq) (rsp *dto.LoginResp, err error)
-	Callback(ctx context.Context, req *dto.CallbackReq) (rsp *dto.CallbackResp, err error)
+	Callback(ctx context.Context, req *dto.CallbackReq) (rsp *dto.CallbackRsp, err error)
 }
 
 // oauth2Service OAuth2服务基础实现
 type oauth2Service struct {
-	provider           oauth2.Provider
+	platform           oauth2.Platform
 	userDAO            *dao.UserDAO
-	imageObjDAO        objdao.ObjDAO
-	thumbnailObjDAO    objdao.ObjDAO
+	audioObjDAO        objdao.ObjDAO
 	accessTokenSigner  jwt.TokenSigner
 	refreshTokenSigner jwt.TokenSigner
 }
@@ -44,10 +44,9 @@ type oauth2Service struct {
 // NewGithubOauth2Service 创建Github OAuth2服务
 func NewGithubOauth2Service() Oauth2Service {
 	return &oauth2Service{
-		provider:           oauth2.NewGithubProvider(),
+		platform:           oauth2.NewGithubPlatform(),
 		userDAO:            dao.GetUserDAO(),
-		imageObjDAO:        objdao.GetImageObjDAO(),
-		thumbnailObjDAO:    objdao.GetThumbnailObjDAO(),
+		audioObjDAO:        objdao.GetAudioObjDAO(),
 		accessTokenSigner:  jwt.GetAccessTokenSigner(),
 		refreshTokenSigner: jwt.GetRefreshTokenSigner(),
 	}
@@ -56,10 +55,9 @@ func NewGithubOauth2Service() Oauth2Service {
 // NewGoogleOauth2Service 创建Google OAuth2服务
 func NewGoogleOauth2Service() Oauth2Service {
 	return &oauth2Service{
-		provider:           oauth2.NewGoogleProvider(),
+		platform:           oauth2.NewGooglePlatform(),
 		userDAO:            dao.GetUserDAO(),
-		imageObjDAO:        objdao.GetImageObjDAO(),
-		thumbnailObjDAO:    objdao.GetThumbnailObjDAO(),
+		audioObjDAO:        objdao.GetAudioObjDAO(),
 		accessTokenSigner:  jwt.GetAccessTokenSigner(),
 		refreshTokenSigner: jwt.GetRefreshTokenSigner(),
 	}
@@ -79,10 +77,10 @@ func (s *oauth2Service) Login(ctx context.Context, req *dto.LoginReq) (rsp *dto.
 
 	logger := logger.WithCtx(ctx)
 
-	url := s.provider.GetAuthURL()
+	url := s.platform.GetAuthURL()
 	rsp.RedirectURL = url
 
-	logger.Info("[Oauth2Service] login", zap.String("provider", req.Provider), zap.String("redirectURL", url))
+	logger.Info("[Oauth2Service] login", zap.String("platform", req.Platform), zap.String("redirectURL", url))
 
 	return rsp, nil
 }
@@ -96,57 +94,72 @@ func (s *oauth2Service) Login(ctx context.Context, req *dto.LoginReq) (rsp *dto.
 //	return err error
 //	author centonhuang
 //	update 2025-01-05 21:00:00
-func (s *oauth2Service) Callback(ctx context.Context, req *dto.CallbackReq) (rsp *dto.CallbackResp, err error) {
-	rsp = &dto.CallbackResp{}
+func (s *oauth2Service) Callback(ctx context.Context, req *dto.CallbackReq) (*dto.CallbackRsp, error) {
+	rsp := &dto.CallbackRsp{}
 
 	logger := logger.WithCtx(ctx)
 	db := database.GetDBInstance(ctx)
 
-	if req.State != config.Oauth2StateString {
+	if req.Body.State != config.Oauth2StateString {
 		logger.Error("[Oauth2Service] invalid state",
-			zap.String("provider", req.Provider),
-			zap.String("state", req.State),
+			zap.String("platform", req.Body.Platform),
+			zap.String("state", req.Body.State),
 			zap.String("expectedState", config.Oauth2StateString))
-		return nil, protocol.ErrUnauthorized
+		rsp.Error = constant.ErrUnauthorized
+		return rsp, nil
 	}
 
 	logger.Info("[Oauth2Service] exchanging token",
-		zap.String("provider", req.Provider),
-		zap.String("code", req.Code),
-		zap.String("state", req.State))
+		zap.String("platform", req.Body.Platform),
+		zap.String("code", req.Body.Code),
+		zap.String("state", req.Body.State))
 
-	token, err := s.provider.ExchangeToken(ctx, req.Code)
+	token, err := s.platform.ExchangeToken(ctx, req.Body.Code)
 	if err != nil {
 		logger.Error("[Oauth2Service] failed to exchange token",
-			zap.String("provider", req.Provider),
-			zap.String("code", req.Code),
+			zap.String("platform", req.Body.Platform),
+			zap.String("code", req.Body.Code),
 			zap.Error(err))
-		return nil, protocol.ErrUnauthorized
+		rsp.Error = constant.ErrUnauthorized
+		return rsp, nil
 	}
 
 	logger.Info("[Oauth2Service] token exchange successful",
-		zap.String("provider", req.Provider),
+		zap.String("platform", req.Body.Platform),
 		zap.String("tokenType", token.TokenType),
 		zap.Bool("valid", token.Valid()))
 
-	userInfo, err := s.provider.GetUserInfo(ctx, token)
+	userInfo, err := s.platform.GetUserInfo(ctx, token)
 	if err != nil {
 		logger.Error("[Oauth2Service] failed to get user info",
-			zap.String("provider", req.Provider),
+			zap.String("platform", req.Body.Platform),
 			zap.Error(err))
-		return nil, protocol.ErrInternalError
+		rsp.Error = constant.ErrInternalError
+		return rsp, nil
 	}
 
 	thirdPartyID := userInfo.GetID()
 	userName, email, avatar := userInfo.GetName(), userInfo.GetEmail(), userInfo.GetAvatar()
 
-	user, err := s.userDAO.GetByEmail(db, email, []string{"id", "name", "avatar"}, []string{})
+	var user *model.User
+	switch req.Body.Platform {
+	case enum.Oauth2PlatformGithub:
+		user, err = s.userDAO.GetByGithubBindID(db, thirdPartyID, []string{"id"})
+	case enum.Oauth2PlatformGoogle:
+		user, err = s.userDAO.GetByGoogleBindID(db, thirdPartyID, []string{"id"})
+	default:
+		logger.Error("[Oauth2Service] invalid platform", zap.String("platform", req.Body.Platform))
+		rsp.Error = constant.ErrInternalError
+		return rsp, nil
+	}
+
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-		logger.Error("[Oauth2Service] failed to get user by email",
-			zap.String("provider", req.Provider),
-			zap.String("email", email),
+		logger.Error("[Oauth2Service] failed to get user by third party bind id",
+			zap.String("platform", req.Body.Platform),
+			zap.String("thirdPartyID", thirdPartyID),
 			zap.Error(err))
-		return nil, protocol.ErrInternalError
+		rsp.Error = constant.ErrInternalError
+		return rsp, nil
 	}
 
 	if user.ID != 0 {
@@ -155,9 +168,10 @@ func (s *oauth2Service) Callback(ctx context.Context, req *dto.CallbackReq) (rsp
 			"last_login": time.Now().UTC(),
 		}); err != nil {
 			logger.Error("[Oauth2Service] failed to update user login time",
-				zap.String("provider", req.Provider),
+				zap.String("platform", req.Body.Platform),
 				zap.Error(err))
-			return nil, protocol.ErrInternalError
+			rsp.Error = constant.ErrInternalError
+			return rsp, nil
 		}
 	} else {
 		// 创建新用户
@@ -168,70 +182,58 @@ func (s *oauth2Service) Callback(ctx context.Context, req *dto.CallbackReq) (rsp
 			Name:       userName,
 			Email:      email,
 			Avatar:     avatar,
-			Permission: model.PermissionReader,
+			Permission: enum.PermissionPending,
 			LastLogin:  time.Now().UTC(),
+		}
+
+		switch req.Body.Platform {
+		case enum.Oauth2PlatformGithub:
+			user.GithubBindID = thirdPartyID
+		case enum.Oauth2PlatformGoogle:
+			user.GoogleBindID = thirdPartyID
 		}
 
 		if err := s.userDAO.Create(db, user); err != nil {
 			logger.Error("[Oauth2Service] failed to create user",
-				zap.String("provider", req.Provider),
+				zap.String("platform", req.Body.Platform),
 				zap.String("userName", userName),
 				zap.Error(err))
-			return nil, protocol.ErrInternalError
+			rsp.Error = constant.ErrInternalError
+			return rsp, nil
 		}
 
-		_, err = s.imageObjDAO.CreateDir(ctx, user.ID)
+		_, err = s.audioObjDAO.CreateDir(ctx, user.ID)
 		if err != nil {
-			logger.Error("[Oauth2Service] failed to create image dir",
-				zap.String("provider", req.Provider),
+			logger.Error("[Oauth2Service] failed to create audio dir",
+				zap.String("platform", req.Body.Platform),
 				zap.Error(err))
-			return nil, protocol.ErrInternalError
+			rsp.Error = constant.ErrInternalError
+			return rsp, nil
 		}
-		logger.Info("[Oauth2Service] image dir created", zap.String("provider", req.Provider))
+		logger.Info("[Oauth2Service] audio dir created", zap.String("platform", req.Body.Platform))
 
-		_, err = s.thumbnailObjDAO.CreateDir(ctx, user.ID)
-		if err != nil {
-			logger.Error("[Oauth2Service] failed to create thumbnail dir",
-				zap.String("provider", req.Provider),
-				zap.Error(err))
-			return nil, protocol.ErrInternalError
-		}
-		logger.Info("[Oauth2Service] thumbnail dir created", zap.String("provider", req.Provider))
-	}
-
-	// 更新第三方平台绑定ID
-	bindField := s.provider.GetBindField()
-	updateData := map[string]interface{}{
-		bindField: thirdPartyID,
-	}
-
-	if err := s.userDAO.Update(db, user, updateData); err != nil {
-		logger.Error("[Oauth2Service] failed to update third party bind id",
-			zap.String("provider", req.Provider),
-			zap.String("bindField", bindField),
-			zap.String("thirdPartyID", thirdPartyID),
-			zap.Error(err))
-		return nil, protocol.ErrInternalError
 	}
 
 	accessToken, err := s.accessTokenSigner.EncodeToken(user.ID)
 	if err != nil {
 		logger.Error("[Oauth2Service] failed to encode access token",
-			zap.String("provider", req.Provider),
+			zap.String("platform", req.Body.Platform),
 			zap.Error(err))
-		return nil, protocol.ErrInternalError
+		rsp.Error = constant.ErrInternalError
+		return rsp, nil
 	}
 
 	refreshToken, err := s.refreshTokenSigner.EncodeToken(user.ID)
 	if err != nil {
 		logger.Error("[Oauth2Service] failed to encode refresh token",
-			zap.String("provider", req.Provider),
+			zap.String("platform", req.Body.Platform),
 			zap.Error(err))
-		return nil, protocol.ErrInternalError
+		rsp.Error = constant.ErrInternalError
+		return rsp, nil
 	}
 
 	logger.Info("[Oauth2Service] callback success",
-		zap.String("provider", req.Provider),
+		zap.String("platform", req.Body.Platform),
 		zap.Uint("userID", user.ID))
 
 	rsp.AccessToken = accessToken

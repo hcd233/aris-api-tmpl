@@ -4,12 +4,16 @@
 package middleware
 
 import (
+	"strings"
+
 	"github.com/danielgtaylor/huma/v2"
-	"github.com/gofiber/fiber/v2"
-	"github.com/hcd233/go-backend-tmpl/internal/constant"
-	"github.com/hcd233/go-backend-tmpl/internal/jwt"
-	"github.com/hcd233/go-backend-tmpl/internal/resource/database"
-	"github.com/hcd233/go-backend-tmpl/internal/resource/database/dao"
+	"github.com/hcd233/aris-api-tmpl/internal/common/constant"
+	"github.com/hcd233/aris-api-tmpl/internal/jwt"
+	"github.com/hcd233/aris-api-tmpl/internal/resource/database"
+	"github.com/hcd233/aris-api-tmpl/internal/resource/database/dao"
+	"github.com/hcd233/aris-api-tmpl/internal/resource/database/model"
+	"github.com/hcd233/aris-api-tmpl/internal/util"
+	"github.com/samber/lo"
 )
 
 // JwtMiddleware JWT 中间件
@@ -27,18 +31,19 @@ func JwtMiddleware() func(ctx huma.Context, next func(huma.Context)) {
 		db := database.GetDBInstance(ctx.Context())
 
 		tokenString := ctx.Header("Authorization")
+		tokenString = strings.TrimSpace(strings.TrimPrefix(strings.TrimSpace(tokenString), "Bearer "))
 		if tokenString == "" {
-			ctx.SetStatus(fiber.StatusUnauthorized)
+			lo.Must0(util.WriteErrorResponse(ctx.BodyWriter(), constant.ErrUnauthorized))
 			return
 		}
 		userID, err := accessTokenSvc.DecodeToken(tokenString)
 		if err != nil {
-			ctx.SetStatus(fiber.StatusUnauthorized)
+			lo.Must0(util.WriteErrorResponse(ctx.BodyWriter(), constant.ErrUnauthorized))
 			return
 		}
-		user, err := dao.GetByID(db, userID, []string{"id", "name", "permission"}, []string{})
+		user, err := dao.Get(db, &model.User{ID: userID}, []string{"id", "name", "permission"})
 		if err != nil {
-			ctx.SetStatus(fiber.StatusInternalServerError)
+			lo.Must0(util.WriteErrorResponse(ctx.BodyWriter(), constant.ErrInternalError))
 			return
 		}
 		ctx = huma.WithValue(ctx, constant.CtxKeyUserID, user.ID)

@@ -51,7 +51,7 @@ A production-ready Go backend template built with modern technologies and best p
 ### 📁 Project Structure
 
 ```
-go-backend-tmpl/
+aris-api-tmpl/
 ├── cmd/                    # Command line interface
 │   ├── server.go          # Server start command
 │   ├── database.go        # Database management commands
@@ -91,8 +91,8 @@ go-backend-tmpl/
 #### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/hcd233/go-backend-tmpl.git
-cd go-backend-tmpl
+git clone https://github.com/hcd233/aris-api-tmpl.git
+cd aris-api-tmpl
 ```
 
 #### 2. Configure Environment Variables
@@ -195,7 +195,7 @@ The API supports multiple authentication methods:
 
 Build the binary:
 ```bash
-go build -o go-backend-tmpl main.go
+go build -o aris-api-tmpl main.go
 ```
 
 Run tests (if available):
@@ -282,7 +282,7 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 ### 📁 项目结构
 
 ```
-go-backend-tmpl/
+aris-api-tmpl/
 ├── cmd/                    # 命令行接口
 │   ├── server.go          # 服务器启动命令
 │   ├── database.go        # 数据库管理命令
@@ -322,8 +322,8 @@ go-backend-tmpl/
 #### 1. 克隆仓库
 
 ```bash
-git clone https://github.com/hcd233/go-backend-tmpl.git
-cd go-backend-tmpl
+git clone https://github.com/hcd233/aris-api-tmpl.git
+cd aris-api-tmpl
 ```
 
 #### 2. 配置环境变量
@@ -426,7 +426,7 @@ API 支持多种身份验证方式:
 
 构建二进制文件:
 ```bash
-go build -o go-backend-tmpl main.go
+go build -o aris-api-tmpl main.go
 ```
 
 运行测试 (如果有):

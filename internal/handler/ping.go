@@ -1,10 +1,22 @@
 package handler
 
 import (
+	"bufio"
 	"context"
+	"fmt"
+	"strconv"
+	"time"
 
-	"github.com/hcd233/go-backend-tmpl/internal/protocol"
-	"github.com/hcd233/go-backend-tmpl/internal/util"
+	"github.com/bytedance/sonic"
+	"github.com/danielgtaylor/huma/v2"
+	"github.com/danielgtaylor/huma/v2/adapters/humafiber"
+	"github.com/hcd233/aris-api-tmpl/internal/common/constant"
+	"github.com/hcd233/aris-api-tmpl/internal/common/enum"
+	"github.com/hcd233/aris-api-tmpl/internal/protocol"
+	"github.com/hcd233/aris-api-tmpl/internal/protocol/dto"
+	"github.com/hcd233/aris-api-tmpl/internal/util"
+	"github.com/samber/lo"
+	"github.com/valyala/fasthttp"
 )
 
 // PingHandler 健康检查处理器
@@ -12,7 +24,8 @@ import (
 //	author centonhuang
 //	update 2025-01-04 15:52:48
 type PingHandler interface {
-	HandlePing(ctx context.Context, _ *struct{}) (*protocol.HumaHTTPResponse[*protocol.PingResponse], error)
+	HandlePing(ctx context.Context, req *dto.EmptyReq) (rsp *protocol.HTTPResponse[*dto.PingResponse], err error)
+	HandleSSEPing(ctx context.Context, req *dto.EmptyReq) (rsp *huma.StreamResponse, err error)
 }
 
 type pingHandler struct{}
@@ -27,10 +40,37 @@ func NewPingHandler() PingHandler {
 }
 
 // HandlePing 健康检查处理器
-func (h *pingHandler) HandlePing(_ context.Context, _ *struct{}) (*protocol.HumaHTTPResponse[*protocol.PingResponse], error) {
-	rsp := &protocol.PingResponse{
+func (h *pingHandler) HandlePing(_ context.Context, _ *dto.EmptyReq) (*protocol.HTTPResponse[*dto.PingResponse], error) {
+	rsp := &dto.PingResponse{
 		Status: "ok",
 	}
 
 	return util.WrapHTTPResponse(rsp, nil)
+}
+
+func (h *pingHandler) HandleSSEPing(_ context.Context, _ *dto.EmptyReq) (rsp *huma.StreamResponse, err error) {
+	return &huma.StreamResponse{
+		Body: func(ctx huma.Context) {
+			fCtx := humafiber.Unwrap(ctx)
+			fCtx.Set("Content-Type", "text/event-stream")
+			fCtx.Set("Cache-Control", "no-cache")
+			fCtx.Set("Connection", "keep-alive")
+			fCtx.Set("Transfer-Encoding", "chunked")
+
+			fCtx.Response().SetBodyStreamWriter(fasthttp.StreamWriter(func(w *bufio.Writer) {
+				for i := 0; i < 30; i++ {
+					data := &protocol.SSEResponse{
+						DataType: enum.SSEDataTypeHeartBeat,
+						Data:     strconv.Itoa(i),
+					}
+					fmt.Fprintf(w, "data: %s\n\n", lo.Must1(sonic.Marshal(data)))
+					err := w.Flush()
+					if err != nil {
+						return
+					}
+					time.Sleep(constant.HeartbeatInterval)
+				}
+			}))
+		},
+	}, nil
 }

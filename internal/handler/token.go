@@ -3,10 +3,10 @@ package handler
 import (
 	"context"
 
-	"github.com/hcd233/go-backend-tmpl/internal/protocol"
-	"github.com/hcd233/go-backend-tmpl/internal/protocol/dto"
-	"github.com/hcd233/go-backend-tmpl/internal/service"
-	"github.com/hcd233/go-backend-tmpl/internal/util"
+	"github.com/hcd233/aris-api-tmpl/internal/protocol"
+	"github.com/hcd233/aris-api-tmpl/internal/protocol/dto"
+	"github.com/hcd233/aris-api-tmpl/internal/service"
+	"github.com/hcd233/aris-api-tmpl/internal/util"
 )
 
 // TokenHandler 令牌处理器
@@ -14,7 +14,7 @@ import (
 //	author centonhuang
 //	update 2025-01-05 21:00:00
 type TokenHandler interface {
-	HandleRefreshToken(ctx context.Context, req *dto.RefreshTokenReq) (*protocol.HumaHTTPResponse[*dto.RefreshTokenResp], error)
+	HandleRefreshToken(ctx context.Context, req *dto.RefreshTokenReq) (*protocol.HTTPResponse[*dto.RefreshTokenRsp], error)
 }
 
 type tokenHandler struct {
@@ -34,13 +34,13 @@ func NewTokenHandler() TokenHandler {
 
 // HandleRefreshToken 刷新令牌
 //
-//	receiver h *tokenHandler
-//	param ctx context.Context
-//	param req *dto.RefreshTokenRequest
-//	return *protocol.HumaHTTPResponse[*dto.RefreshTokenResp]
-//	return error
-//	author centonhuang
-//	update 2025-01-05 21:00:00
-func (h *tokenHandler) HandleRefreshToken(ctx context.Context, req *dto.RefreshTokenReq) (*protocol.HumaHTTPResponse[*dto.RefreshTokenResp], error) {
+//	@receiver h *tokenHandler
+//	@param ctx context.Context
+//	@param req *dto.RefreshTokenReq
+//	@return *protocol.HTTPResponse[*dto.RefreshTokenRsp]
+//	@return error
+//	@author centonhuang
+//	@update 2025-11-11 04:58:25
+func (h *tokenHandler) HandleRefreshToken(ctx context.Context, req *dto.RefreshTokenReq) (*protocol.HTTPResponse[*dto.RefreshTokenRsp], error) {
 	return util.WrapHTTPResponse(h.svc.RefreshToken(ctx, req))
 }

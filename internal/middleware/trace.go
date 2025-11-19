@@ -3,7 +3,7 @@ package middleware
 import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
-	"github.com/hcd233/go-backend-tmpl/internal/constant"
+	"github.com/hcd233/aris-api-tmpl/internal/common/constant"
 )
 
 // TraceMiddleware 追踪中间件
@@ -13,11 +13,13 @@ import (
 //	update 2025-01-05 15:30:00
 func TraceMiddleware() fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		traceID := c.Get("X-Trace-Id")
+		// traceID := c.Get("X-Trace-Id")
 
-		if traceID == "" {
-			traceID = uuid.New().String()
-		}
+		// if traceID == "" {
+		// 	traceID = uuid.New().String()
+		// }
+
+		traceID := uuid.New().String()
 
 		c.Locals(constant.CtxKeyTraceID, traceID)
 

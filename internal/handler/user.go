@@ -3,10 +3,10 @@ package handler
 import (
 	"context"
 
-	"github.com/hcd233/go-backend-tmpl/internal/protocol"
-	"github.com/hcd233/go-backend-tmpl/internal/protocol/dto"
-	"github.com/hcd233/go-backend-tmpl/internal/service"
-	"github.com/hcd233/go-backend-tmpl/internal/util"
+	"github.com/hcd233/aris-api-tmpl/internal/protocol"
+	"github.com/hcd233/aris-api-tmpl/internal/protocol/dto"
+	"github.com/hcd233/aris-api-tmpl/internal/service"
+	"github.com/hcd233/aris-api-tmpl/internal/util"
 )
 
 // UserHandler 用户处理器
@@ -14,9 +14,8 @@ import (
 //	author centonhuang
 //	update 2025-01-04 15:56:20
 type UserHandler interface {
-	HandleGetCurUserInfo(ctx context.Context, req *dto.EmptyReq) (*protocol.HumaHTTPResponse[*dto.GetCurUserInfoResp], error)
-	HandleGetUserInfo(ctx context.Context, req *dto.GetUserInfoReq) (*protocol.HumaHTTPResponse[*dto.GetUserInfoResp], error)
-	HandleUpdateInfo(ctx context.Context, req *dto.UpdateUserInfoReq) (*protocol.HumaHTTPResponse[*dto.EmptyResp], error)
+	HandleGetCurUser(ctx context.Context, req *dto.EmptyReq) (*protocol.HTTPResponse[*dto.GetCurUserRsp], error)
+	HandleUpdateUser(ctx context.Context, req *dto.UpdateUserReq) (*protocol.HTTPResponse[*dto.EmptyRsp], error)
 }
 
 type userHandler struct {
@@ -34,14 +33,10 @@ func NewUserHandler() UserHandler {
 	}
 }
 
-func (h *userHandler) HandleGetCurUserInfo(ctx context.Context, req *dto.EmptyReq) (*protocol.HumaHTTPResponse[*dto.GetCurUserInfoResp], error) {
-	return util.WrapHTTPResponse(h.svc.GetCurUserInfo(ctx, req))
+func (h *userHandler) HandleGetCurUser(ctx context.Context, req *dto.EmptyReq) (*protocol.HTTPResponse[*dto.GetCurUserRsp], error) {
+	return util.WrapHTTPResponse(h.svc.GetCurUser(ctx, req))
 }
 
-func (h *userHandler) HandleGetUserInfo(ctx context.Context, req *dto.GetUserInfoReq) (*protocol.HumaHTTPResponse[*dto.GetUserInfoResp], error) {
-	return util.WrapHTTPResponse(h.svc.GetUserInfo(ctx, req))
-}
-
-func (h *userHandler) HandleUpdateInfo(ctx context.Context, req *dto.UpdateUserInfoReq) (*protocol.HumaHTTPResponse[*dto.EmptyResp], error) {
-	return util.WrapHTTPResponse(h.svc.UpdateUserInfo(ctx, req))
+func (h *userHandler) HandleUpdateUser(ctx context.Context, req *dto.UpdateUserReq) (*protocol.HTTPResponse[*dto.EmptyRsp], error) {
+	return util.WrapHTTPResponse(h.svc.UpdateUser(ctx, req))
 }

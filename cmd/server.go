@@ -5,31 +5,29 @@ import (
 	"os"
 	"runtime/debug"
 
-	"github.com/hcd233/go-backend-tmpl/internal/api"
-	"github.com/hcd233/go-backend-tmpl/internal/cron"
-	"github.com/hcd233/go-backend-tmpl/internal/logger"
+	"github.com/hcd233/aris-api-tmpl/internal/api"
+	"github.com/hcd233/aris-api-tmpl/internal/logger"
+	"github.com/hcd233/aris-api-tmpl/internal/middleware"
 	"go.uber.org/zap"
 
-	"github.com/hcd233/go-backend-tmpl/internal/middleware"
-	"github.com/hcd233/go-backend-tmpl/internal/resource/cache"
-	"github.com/hcd233/go-backend-tmpl/internal/resource/database"
-	"github.com/hcd233/go-backend-tmpl/internal/resource/llm"
-	"github.com/hcd233/go-backend-tmpl/internal/resource/storage"
-	"github.com/hcd233/go-backend-tmpl/internal/router"
+	"github.com/hcd233/aris-api-tmpl/internal/resource/cache"
+	"github.com/hcd233/aris-api-tmpl/internal/resource/database"
+	"github.com/hcd233/aris-api-tmpl/internal/resource/storage"
+	"github.com/hcd233/aris-api-tmpl/internal/router"
 	"github.com/samber/lo"
 	"github.com/spf13/cobra"
 )
 
 var serverCmd = &cobra.Command{
 	Use:   "server",
-	Short: "服务器命令组",
-	Long:  `包含服务器相关操作的命令组`,
+	Short: "Server Command Group",
+	Long:  `Server command group for starting and managing the API server`,
 }
 
 var startServerCmd = &cobra.Command{
 	Use:   "start",
-	Short: "启动API服务器",
-	Long:  `启动并运行API服务器，监听指定的主机和端口`,
+	Short: "Start the API server",
+	Long:  `Start and run the API server, listening on the specified host and port`,
 	Run: func(cmd *cobra.Command, _ []string) {
 		defer func() {
 			if r := recover(); r != nil {
@@ -43,22 +41,21 @@ var startServerCmd = &cobra.Command{
 		database.InitDatabase()
 		cache.InitCache()
 		storage.InitObjectStorage()
-		llm.InitOpenAIClient()
-		cron.InitCronJobs()
+		// cron.InitCronJobs()
 
 		app := api.GetFiberApp()
 
-		// 中间件
 		app.Use(
 			middleware.RecoverMiddleware(),
 			middleware.FgprofMiddleware(),
-			middleware.TraceMiddleware(),
-			middleware.LogMiddleware(),
 			middleware.CORSMiddleware(),
 			middleware.CompressMiddleware(),
+			middleware.TraceMiddleware(),
+			middleware.LogMiddleware(),
 		)
 
-		router.RegisterRouter(app)
+		router.RegisterDocsRouter()
+		router.RegisterAPIRouter()
 
 		lo.Must0(app.Listen(fmt.Sprintf("%s:%s", host, port)))
 	},

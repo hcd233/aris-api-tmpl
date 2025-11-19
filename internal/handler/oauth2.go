@@ -3,10 +3,11 @@ package handler
 import (
 	"context"
 
-	"github.com/hcd233/go-backend-tmpl/internal/protocol"
-	"github.com/hcd233/go-backend-tmpl/internal/protocol/dto"
-	"github.com/hcd233/go-backend-tmpl/internal/service"
-	"github.com/hcd233/go-backend-tmpl/internal/util"
+	"github.com/hcd233/aris-api-tmpl/internal/common/enum"
+	"github.com/hcd233/aris-api-tmpl/internal/protocol"
+	"github.com/hcd233/aris-api-tmpl/internal/protocol/dto"
+	"github.com/hcd233/aris-api-tmpl/internal/service"
+	"github.com/hcd233/aris-api-tmpl/internal/util"
 )
 
 // Oauth2Handler OAuth2处理器接口
@@ -14,8 +15,8 @@ import (
 //	author centonhuang
 //	update 2025-01-05 21:00:00
 type Oauth2Handler interface {
-	HandleLogin(ctx context.Context, req *dto.LoginReq) (*protocol.HumaHTTPResponse[*dto.LoginResp], error)
-	HandleCallback(ctx context.Context, req *dto.CallbackReq) (*protocol.HumaHTTPResponse[*dto.CallbackResp], error)
+	HandleLogin(ctx context.Context, req *dto.LoginReq) (*protocol.HTTPResponse[*dto.LoginResp], error)
+	HandleCallback(ctx context.Context, req *dto.CallbackReq) (*protocol.HTTPResponse[*dto.CallbackRsp], error)
 }
 
 type oauth2Handler struct{}
@@ -31,44 +32,42 @@ func NewOauth2Handler() Oauth2Handler {
 
 // HandleLogin OAuth2登录
 //
-//	receiver h *oauth2Handler
-//	param ctx context.Context
-//	param req *dto.LoginRequest
-//	return *protocol.HumaHTTPResponse[*dto.LoginResp]
-//	return error
-//	author centonhuang
-//	update 2025-01-05 21:00:00
-func (h *oauth2Handler) HandleLogin(ctx context.Context, req *dto.LoginReq) (*protocol.HumaHTTPResponse[*dto.LoginResp], error) {
-	svc := h.getService(req.Provider)
-	return util.WrapHTTPResponse(svc.Login(ctx, req))
+//	@receiver h *oauth2Handler
+//	@param ctx context.Context
+//	@param req *dto.LoginReq
+//	@return *protocol.HTTPResponse[*dto.LoginResp]
+//	@return error
+//	@author centonhuang
+//	@update 2025-11-11 04:57:58
+func (h *oauth2Handler) HandleLogin(ctx context.Context, req *dto.LoginReq) (*protocol.HTTPResponse[*dto.LoginResp], error) {
+	return util.WrapHTTPResponse(h.getService(req.Platform).Login(ctx, req))
 }
 
 // HandleCallback OAuth2回调
 //
-//	receiver h *oauth2Handler
-//	param ctx context.Context
-//	param req *dto.CallbackRequest
-//	return *protocol.HumaHTTPResponse[*dto.CallbackResp]
-//	return error
-//	author centonhuang
-//	update 2025-01-05 21:00:00
-func (h *oauth2Handler) HandleCallback(ctx context.Context, req *dto.CallbackReq) (*protocol.HumaHTTPResponse[*dto.CallbackResp], error) {
-	svc := h.getService(req.Provider)
-	return util.WrapHTTPResponse(svc.Callback(ctx, req))
+//	@receiver h *oauth2Handler
+//	@param ctx context.Context
+//	@param req *dto.CallbackReq
+//	@return *protocol.HTTPResponse[*dto.CallbackRsp]
+//	@return error
+//	@author centonhuang
+//	@update 2025-11-11 04:58:11
+func (h *oauth2Handler) HandleCallback(ctx context.Context, req *dto.CallbackReq) (*protocol.HTTPResponse[*dto.CallbackRsp], error) {
+	return util.WrapHTTPResponse(h.getService(req.Body.Platform).Callback(ctx, req))
 }
 
-// getService 根据provider获取对应的service
+// getService 根据platform获取对应的service
 //
 //	receiver h *oauth2Handler
-//	param provider string
+//	param platform string
 //	return service.Oauth2Service
 //	author centonhuang
 //	update 2025-01-05 21:00:00
-func (h *oauth2Handler) getService(provider string) service.Oauth2Service {
-	switch provider {
-	case "github":
+func (h *oauth2Handler) getService(platform string) service.Oauth2Service {
+	switch platform {
+	case enum.Oauth2PlatformGithub:
 		return service.NewGithubOauth2Service()
-	case "google":
+	case enum.Oauth2PlatformGoogle:
 		return service.NewGoogleOauth2Service()
 	// case "qq":
 	// 	return service.NewQQOauth2Service()

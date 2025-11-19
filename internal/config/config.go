@@ -154,6 +154,11 @@ var (
 	// JwtRefreshTokenSecret string Jwt Refresh Token密钥
 	//	update 2024-06-22 11:15:55
 	JwtRefreshTokenSecret string
+
+	// ServerEndpoint string
+	//	@author centonhuang
+	//	@update 2025-11-11 20:13:39
+	ServerEndpoint string
 )
 
 func init() {
@@ -164,8 +169,8 @@ func initEnvironment() {
 	config := viper.New()
 	config.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 
-	config.SetDefault("read.timeout", 10)
-	config.SetDefault("write.timeout", 10)
+	config.SetDefault("read.timeout", 10*time.Second)
+	config.SetDefault("write.timeout", 5*time.Minute)
 	config.SetDefault("max.header.bytes", 1<<20)
 
 	config.SetDefault("log.level", "info")
@@ -175,8 +180,8 @@ func initEnvironment() {
 
 	config.AutomaticEnv()
 
-	ReadTimeout = time.Duration(config.GetInt("read.timeout")) * time.Second
-	WriteTimeout = time.Duration(config.GetInt("write.timeout")) * time.Second
+	ReadTimeout = config.GetDuration("read.timeout")
+	WriteTimeout = config.GetDuration("write.timeout")
 	MaxHeaderBytes = config.GetInt("max.header.bytes")
 
 	LogLevel = config.GetString("log.level")
@@ -224,4 +229,6 @@ func initEnvironment() {
 
 	JwtRefreshTokenExpired = config.GetDuration("jwt.refresh.token.expired")
 	JwtRefreshTokenSecret = config.GetString("jwt.refresh.token.secret")
+
+	ServerEndpoint = config.GetString("server.endpoint")
 }

@@ -7,15 +7,15 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/hcd233/go-backend-tmpl/internal/logger"
+	"github.com/hcd233/aris-api-tmpl/internal/logger"
 	"github.com/spf13/cobra"
 )
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "",
-	Short: "Go Backend Tmpl API",
-	Long:  `Go Backend Tmpl API`,
+	Short: "Aris Memory API",
+	Long:  `Aris Memory API`,
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.

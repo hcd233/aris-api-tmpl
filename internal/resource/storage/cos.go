@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/hcd233/go-backend-tmpl/internal/config"
-	"github.com/hcd233/go-backend-tmpl/internal/logger"
+	"github.com/hcd233/aris-api-tmpl/internal/config"
+	"github.com/hcd233/aris-api-tmpl/internal/logger"
 	"github.com/samber/lo"
 	"github.com/tencentyun/cos-go-sdk-v5"
 	"go.uber.org/zap"
@@ -32,7 +32,8 @@ func initCosClient() {
 		},
 	})
 
-	_, _ = lo.Must2(cosClient.Bucket.Get(context.Background(), &cos.BucketGetOptions{}))
+	// list buckets
+	_, _ = lo.Must2(cosClient.Service.Get(context.Background(), nil))
 
 	logger.Logger().Info("[Object Storage] Connected to COS", zap.String("endpoint", endpoint.String()))
 }

@@ -5,13 +5,12 @@ import (
 	"errors"
 	"time"
 
-	"github.com/hcd233/go-backend-tmpl/internal/constant"
-	"github.com/hcd233/go-backend-tmpl/internal/logger"
-	"github.com/hcd233/go-backend-tmpl/internal/protocol"
-	"github.com/hcd233/go-backend-tmpl/internal/protocol/dto"
-	"github.com/hcd233/go-backend-tmpl/internal/resource/database"
-	"github.com/hcd233/go-backend-tmpl/internal/resource/database/dao"
-	"github.com/hcd233/go-backend-tmpl/internal/resource/database/model"
+	"github.com/hcd233/aris-api-tmpl/internal/common/constant"
+	"github.com/hcd233/aris-api-tmpl/internal/logger"
+	"github.com/hcd233/aris-api-tmpl/internal/protocol/dto"
+	"github.com/hcd233/aris-api-tmpl/internal/resource/database"
+	"github.com/hcd233/aris-api-tmpl/internal/resource/database/dao"
+	"github.com/hcd233/aris-api-tmpl/internal/resource/database/model"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
@@ -21,9 +20,8 @@ import (
 //	author centonhuang
 //	update 2025-01-04 21:04:00
 type UserService interface {
-	GetCurUserInfo(ctx context.Context, req *dto.EmptyReq) (rsp *dto.GetCurUserInfoResp, err error)
-	GetUserInfo(ctx context.Context, req *dto.GetUserInfoReq) (rsp *dto.GetUserInfoResp, err error)
-	UpdateUserInfo(ctx context.Context, req *dto.UpdateUserInfoReq) (rsp *dto.EmptyResp, err error)
+	GetCurUser(ctx context.Context, req *dto.EmptyReq) (rsp *dto.GetCurUserRsp, err error)
+	UpdateUser(ctx context.Context, req *dto.UpdateUserReq) (rsp *dto.EmptyRsp, err error)
 }
 
 type userService struct {
@@ -41,40 +39,45 @@ func NewUserService() UserService {
 	}
 }
 
-// GetCurUserInfo 获取当前用户信息
+// GetCurUser 获取当前用户信息
 //
-//	receiver s *userService
-//	param ctx context.Context
-//	param req *protocol.GetCurUserInfoRequest
-//	return rsp *protocol.GetCurUserInfoResponse
-//	return err error
-//	author centonhuang
-//	update 2025-01-04 21:04:03
-func (s *userService) GetCurUserInfo(ctx context.Context, _ *dto.EmptyReq) (rsp *dto.GetCurUserInfoResp, err error) {
-	rsp = &dto.GetCurUserInfoResp{}
+//	@receiver s *userService
+//	@param ctx context.Context
+//	@param _ *dto.EmptyReq
+//	@return *dto.GetCurUserRsp
+//	@return error
+//	@author centonhuang
+//	@update 2025-11-11 04:59:13
+func (s *userService) GetCurUser(ctx context.Context, _ *dto.EmptyReq) (*dto.GetCurUserRsp, error) {
+	rsp := &dto.GetCurUserRsp{}
 
 	userID := ctx.Value(constant.CtxKeyUserID).(uint)
 
 	logger := logger.WithCtx(ctx)
 	db := database.GetDBInstance(ctx)
 
-	user, err := s.userDAO.GetByID(db, userID, []string{"id", "name", "email", "avatar", "created_at", "last_login", "permission"}, []string{})
+	user, err := s.userDAO.Get(db, &model.User{ID: userID}, []string{"id", "name", "email", "avatar", "created_at", "last_login", "permission"})
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			logger.Error("[UserService] user not found")
-			return nil, protocol.ErrDataNotExists
+			rsp.Error = constant.ErrDataNotExists
+			return rsp, nil
 		}
 		logger.Error("[UserService] failed to get user by id", zap.Error(err))
-		return nil, protocol.ErrInternalError
+		rsp.Error = constant.ErrInternalError
+		return rsp, nil
 	}
 
-	rsp.User = &dto.User{
-		UserID:     user.ID,
-		Name:       user.Name,
-		Email:      user.Email,
-		Avatar:     user.Avatar,
+	rsp.User = &dto.DetailedUser{
+		ID:         user.ID,
 		CreatedAt:  user.CreatedAt.Format(time.DateTime),
+		LastLogin:  user.LastLogin.Format(time.DateTime),
 		Permission: string(user.Permission),
+		User: dto.User{
+			Name:   user.Name,
+			Email:  user.Email,
+			Avatar: user.Avatar,
+		},
 	}
 
 	logger.Info("[UserService] get cur user info",
@@ -87,64 +90,22 @@ func (s *userService) GetCurUserInfo(ctx context.Context, _ *dto.EmptyReq) (rsp 
 	return rsp, nil
 }
 
-// GetUserInfo 获取用户信息
-//
-//	receiver s *userService
-//	param ctx context.Context
-//	param req *protocol.GetUserInfoRequest
-//	return *protocol.GetUserInfoResponse
-//	return error
-//	author centonhuang
-//	update 2025-01-04 21:09:04
-func (s *userService) GetUserInfo(ctx context.Context, req *dto.GetUserInfoReq) (rsp *dto.GetUserInfoResp, err error) {
-	rsp = &dto.GetUserInfoResp{}
-
-	logger := logger.WithCtx(ctx)
-
-	db := database.GetDBInstance(ctx)
-
-	user, err := s.userDAO.GetByID(db, req.UserID, []string{"id", "name", "email", "avatar", "created_at", "last_login", "permission"}, []string{})
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			logger.Error("[UserService] user not found")
-			return nil, protocol.ErrDataNotExists
-		}
-		logger.Error("[UserService] failed to get user by id", zap.Error(err))
-		return nil, protocol.ErrInternalError
-	}
-
-	logger.Info("[UserService] get user info",
-		zap.String("email", user.Email),
-		zap.String("avatar", user.Avatar),
-		zap.Time("createdAt", user.CreatedAt),
-		zap.Time("lastLogin", user.LastLogin))
-
-	rsp.User = &dto.User{
-		UserID:    user.ID,
-		Name:      user.Name,
-		Email:     user.Email,
-		Avatar:    user.Avatar,
-		CreatedAt: user.CreatedAt.Format(time.DateTime),
-		LastLogin: user.LastLogin.Format(time.DateTime),
-	}
-
-	return rsp, nil
-}
-
-func (s *userService) UpdateUserInfo(ctx context.Context, req *dto.UpdateUserInfoReq) (rsp *dto.EmptyResp, err error) {
-	rsp = &dto.EmptyResp{}
+func (s *userService) UpdateUser(ctx context.Context, req *dto.UpdateUserReq) (*dto.EmptyRsp, error) {
+	rsp := &dto.EmptyRsp{}
 
 	userID := ctx.Value(constant.CtxKeyUserID).(uint)
 
 	logger := logger.WithCtx(ctx)
-
 	db := database.GetDBInstance(ctx)
 
 	if err := s.userDAO.Update(db, &model.User{ID: userID}, map[string]interface{}{
-		"name": req.Body.UserName,
+		"name":   req.Body.User.Name,
+		"email":  req.Body.User.Email,
+		"avatar": req.Body.User.Avatar,
 	}); err != nil {
 		logger.Error("[UserService] failed to update user", zap.Error(err))
-		return nil, protocol.ErrInternalError
+		rsp.Error = constant.ErrInternalError
+		return rsp, nil
 	}
 
 	return rsp, nil

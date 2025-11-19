@@ -5,7 +5,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/recover"
-	"github.com/hcd233/go-backend-tmpl/internal/logger"
+	"github.com/hcd233/aris-api-tmpl/internal/logger"
 	"go.uber.org/zap"
 )
 
@@ -18,7 +18,7 @@ func RecoverMiddleware() fiber.Handler {
 	return recover.New(recover.Config{
 		EnableStackTrace: true,
 		StackTraceHandler: func(c *fiber.Ctx, e interface{}) {
-			logger.WithFCtx(c).Panic("[Panic Recovery] recovered panic",
+			logger.WithFCtx(c).Error("[Panic Recovery] recovered panic",
 				zap.Any("error", e),
 				zap.ByteString("stack", debug.Stack()))
 		},

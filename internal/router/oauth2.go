@@ -4,29 +4,30 @@ import (
 	"net/http"
 
 	"github.com/danielgtaylor/huma/v2"
-	"github.com/hcd233/go-backend-tmpl/internal/handler"
+	"github.com/hcd233/aris-api-tmpl/internal/common/constant"
+	"github.com/hcd233/aris-api-tmpl/internal/handler"
+	"github.com/hcd233/aris-api-tmpl/internal/middleware"
 )
 
-func initOauth2Router(oauth2Group *huma.Group) {
+func initOauth2Router(oauth2Group huma.API) {
 	oauth2Handler := handler.NewOauth2Handler()
 
-	// OAuth2登录
 	huma.Register(oauth2Group, huma.Operation{
 		OperationID: "oauth2Login",
 		Method:      http.MethodGet,
-		Path:        "/{provider}/login",
+		Path:        "/login",
 		Summary:     "OAuth2Login",
-		Description: "Get OAuth2 authorization URL for the specified provider (github/google/qq)",
-		Tags:        []string{"oauth2"},
+		Description: "Get OAuth2 authorization URL for the specified platform (github/google/qq)",
+		Tags:        []string{"OAuth2"},
 	}, oauth2Handler.HandleLogin)
 
-	// OAuth2回调
 	huma.Register(oauth2Group, huma.Operation{
 		OperationID: "oauth2Callback",
-		Method:      http.MethodGet,
-		Path:        "/{provider}/callback",
+		Method:      http.MethodPost,
+		Path:        "/callback",
 		Summary:     "OAuth2Callback",
 		Description: "Handle OAuth2 callback with authorization code and state",
-		Tags:        []string{"oauth2"},
+		Tags:        []string{"OAuth2"},
+		Middlewares: huma.Middlewares{middleware.RateLimiterMiddleware("oauth2Callback", "", constant.PeriodOAuth2Callback, constant.LimitOAuth2Callback)},
 	}, oauth2Handler.HandleCallback)
 }

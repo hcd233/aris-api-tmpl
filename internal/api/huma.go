@@ -12,9 +12,9 @@ func init() {
 		OpenAPI: &huma.OpenAPI{
 			OpenAPI: "3.1.0",
 			Info: &huma.Info{
-				Title:   "Go Backend Tmpl",
-				Description: "Go Backend Tmpl is a production-ready Go backend template built with modern technologies and best practices.",
-				Version: "1.0",
+				Title:       "Aris API Tmpl",
+				Description: "Aris API Tmpl is a RESTful API Template.",
+				Version:     "1.0",
 				Contact: &huma.Contact{
 					Name:  "hcd233",
 					Email: "lvlvko233@qq.com",
@@ -38,7 +38,7 @@ func init() {
 			},
 		},
 		OpenAPIPath:   "/openapi",
-		DocsPath:      "/docs",
+		DocsPath:      "",
 		SchemasPath:   "/schemas",
 		Formats:       huma.DefaultFormats,
 		DefaultFormat: "application/json",
