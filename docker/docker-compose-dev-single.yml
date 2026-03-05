@@ -6,28 +6,28 @@ networks:
 
 services:
 
-  db-migrate:
+  aris-api-tmpl-db-migrate-dev:
     image: ghcr.io/hcd233/aris-api-tmpl:master # aris-api-tmpl:latest
-    container_name: db-migrate
+    container_name: aris-api-tmpl-db-migrate-dev
     restart: no
     networks:
       - 1panel-network
     env_file:
-      - ../env/api.env
+      - ../env/api-dev.env
     command: ["/app/aris-api-tmpl", "database", "migrate"]
 
-  aris-api-tmpl:
+  aris-api-tmpl-dev:
     image: ghcr.io/hcd233/aris-api-tmpl:master # aris-api-tmpl:latest
-    container_name: aris-api-tmpl
+    container_name: aris-api-tmpl-dev
     restart: always
     networks:
       - 1panel-network
     ports:
-      - 8170:8080
+      - 9080:8080
     env_file:
-      - ../env/api.env
+      - ../env/api-dev.env
     depends_on:
-      db-migrate:
+      aris-api-tmpl-db-migrate-dev:
         condition: service_completed_successfully
     healthcheck:
       test: ["CMD", "curl", "-f", "http://0.0.0.0:8080"]
@@ -37,4 +37,4 @@ services:
 
     command: ["/app/aris-api-tmpl", "server", "start", "--host", "0.0.0.0", "--port", "8080"]
 
-# docker compose -f docker/docker-compose-without-middlewares.yml up -d
+# docker compose -f docker/docker-compose-dev-single.yml up -d
