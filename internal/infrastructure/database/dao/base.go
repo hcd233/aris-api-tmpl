@@ -92,6 +92,23 @@ func (dao *baseDAO[ModelT]) Get(db *gorm.DB, where *ModelT, fields []string) (da
 	return
 }
 
+// BatchGetByIDs 根据ID列表批量查询数据
+//
+//	param db *gorm.DB
+//	param ids []uint
+//	param fields []string
+//	return data []*ModelT
+//	return err error
+//	author centonhuang
+//	update 2026-01-29 10:00:00
+func (dao *baseDAO[ModelT]) BatchGetByIDs(db *gorm.DB, ids []uint, fields []string) (data []*ModelT, err error) {
+	if len(ids) == 0 {
+		return []*ModelT{}, nil
+	}
+	err = db.Select(fields).Where("id IN ?", ids).Where("deleted_at = 0").Find(&data).Error
+	return
+}
+
 // Paginate 分页查询
 //
 //	param dao *BaseDAO[T]
