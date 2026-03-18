@@ -9,7 +9,7 @@ import (
 
 // CORSMiddleware 跨域中间件
 //
-//	return gin.HandlerFunc
+//	return fiber.Handler
 //	author centonhuang
 //	update 2024-09-16 04:07:30
 func CORSMiddleware() fiber.Handler {

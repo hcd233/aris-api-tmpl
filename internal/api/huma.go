@@ -3,6 +3,9 @@ package api
 import (
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/danielgtaylor/huma/v2/adapters/humafiber"
+	"github.com/hcd233/aris-api-tmpl/internal/config"
+	"github.com/hcd233/aris-api-tmpl/internal/enum"
+	"github.com/samber/lo"
 )
 
 var humaAPI huma.API
@@ -37,9 +40,9 @@ func init() {
 				},
 			},
 		},
-		OpenAPIPath:   "/openapi",
+		OpenAPIPath:   lo.If(config.Env != enum.EnvProduction, "/openapi").Else(""),
 		DocsPath:      "",
-		SchemasPath:   "/schemas",
+		SchemasPath:   lo.If(config.Env != enum.EnvProduction, "/schemas").Else(""),
 		Formats:       huma.DefaultFormats,
 		DefaultFormat: "application/json",
 	})

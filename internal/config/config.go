@@ -14,15 +14,15 @@ var (
 	//	@update 2026-01-31 15:20:42
 	Env enum.Env
 
-	// ReadTimeout time Gin读取超时时间
+	// ReadTimeout time 读取超时时间
 	//	update 2024-06-22 08:59:40
 	ReadTimeout time.Duration
 
-	// WriteTimeout time Gin写入超时时间
+	// WriteTimeout time 写入超时时间
 	//	update 2024-06-22 08:59:37
 	WriteTimeout time.Duration
 
-	// MaxHeaderBytes int Gin最大头部字节数
+	// MaxHeaderBytes int 最大头部字节数
 	//	update 2024-06-22 08:59:34
 	MaxHeaderBytes int
 
@@ -191,6 +191,8 @@ func initEnvironment() {
 	config.SetDefault("postgres.sslmode", "disable")
 
 	config.AutomaticEnv()
+
+	Env = config.GetString("env")
 
 	ReadTimeout = config.GetDuration("read.timeout")
 	WriteTimeout = config.GetDuration("write.timeout")
