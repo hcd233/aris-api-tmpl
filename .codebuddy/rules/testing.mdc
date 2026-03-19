@@ -1,0 +1,201 @@
+---
+description: 
+alwaysApply: true
+enabled: true
+updatedAt: 2026-03-19T07:23:39.470Z
+provider: 
+---
+
+# Testing Rule - 测试规范
+
+## 适用范围
+
+本规则适用于在本仓库 **新增/修改/重构任何功能代码** 后的测试用例编写与维护。
+
+**优先级说明**：测试规范是开发流程的强制要求，与 Clean Code Rule 同等优先级。
+
+---
+
+## 核心原则
+
+1. **每次功能开发/修改完成后，必须沉淀对应的测试用例**
+2. **每次提交前，必须运行全量测试用例并确保全部通过**
+3. 测试用例是项目资产，和业务代码同等重要
+4. 用例应具备可读性和可维护性，未来其他人能快速理解测试意图
+5. 用例应该尽可能覆盖全边界条件，确保业务功能得到充分验证
+6. 测试代码日志使用英文
+
+---
+
+## 📁 测试目录规范
+
+### 目录结构
+
+```
+test/                              # 顶层测试目录（集成测试、端到端测试、专项调查测试）
+├── openai_proxy/                  # 示例：OpenAI 代理相关测试
+│   ├── fixtures/                  # 测试 fixtures 数据
+│   │   ├── chat_completion_req.json
+│   │   └── chat_completion_rsp.json
+│   └── proxy_test.go
+├── anthropic_proxy/               # 示例：Anthropic 代理相关测试
+│   └── ...
+└── auth/                          # 示例：认证相关测试
+    └── ...
+
+internal/                          # 各层的单元测试（和源码同目录）
+├── util/
+│   ├── openai.go
+│   └── openai_test.go             # util 层单元测试
+├── dto/
+│   ├── unified_message.go
+│   └── unified_message_test.go    # DTO 层单元测试
+├── service/
+│   ├── openai.go
+│   └── openai_test.go             # Service 层单元测试
+└── ...
+```
+
+### 分类规则
+
+| 测试类型 | 存放位置 | 说明 |
+|---------|---------|------|
+| **单元测试** | `internal/<package>/<file>_test.go` | 与源码同目录同包，测试单个函数/方法的行为 |
+| **集成测试** | `test/<主题>/` | 跨包/跨层测试，或需要外部依赖（DB/Redis）的测试 |
+| **专项调查测试** | `test/<主题>/` | 用于定位 Bug 根因、验证边界行为等专项测试 |
+| **端到端测试** | `test/<主题>/` | 模拟完整请求链路的测试 |
+
+### `test/` 目录组织原则
+
+1. **按测试主题命名子目录**，使用 `snake_case`，如 `message_checksum`、`openai_proxy`、`rate_limiter`
+2. **每个子目录是一个独立的 Go test package**，package 名与目录名一致（下划线形式）
+3. **测试数据文件**（JSON、YAML 等）放在对应子目录内，或放在 `fixtures/` 子目录中
+4. **禁止**在 `test/` 下直接放散落的 `_test.go` 文件，必须归入主题子目录
+
+### 单元测试（`internal/` 内）组织原则
+
+1. 测试文件与源文件**同目录同包**，文件名为 `<source_file>_test.go`
+2. 测试函数命名：`Test<FunctionName>_<场景描述>`，如 `TestComputeMessageChecksum_DifferentKeyOrder`
+3. 如需测试数据，在同目录建 `testdata/` 子目录（Go 标准约定，`go tool` 自动忽略）
+
+---
+
+## ✏️ 用例编写规范
+
+### 命名规范
+
+```go
+// 函数级测试
+func TestComputeMessageChecksum(t *testing.T) { ... }
+
+// 场景级测试（子测试）
+func TestComputeMessageChecksum(t *testing.T) {
+    t.Run("相同消息应产生相同checksum", func(t *testing.T) { ... })
+    t.Run("不同键序的Arguments应产生相同checksum", func(t *testing.T) { ... })
+    t.Run("空ToolCalls应正常处理", func(t *testing.T) { ... })
+}
+
+// 表驱动测试
+func TestNormalizeJSONString(t *testing.T) {
+    tests := []struct {
+        name     string
+        input    string
+        expected string
+    }{
+        {"键已排序", `{"a":1,"b":2}`, `{"a":1,"b":2}`},
+        {"键逆序", `{"b":2,"a":1}`, `{"a":1,"b":2}`},
+    }
+    for _, tt := range tests {
+        t.Run(tt.name, func(t *testing.T) { ... })
+    }
+}
+```
+
+### 结构规范
+
+1. **必须使用 `t.Helper()`** 标记辅助函数
+2. **优先使用表驱动测试（Table-Driven Tests）** 覆盖多种输入场景
+3. **测试数据与测试逻辑分离** — 复杂输入数据放 JSON/YAML 文件，用 `loadCases()` 等辅助函数加载
+4. **每个测试函数只验证一个行为** — 不要在一个 Test 函数中塞入多个不相关的断言
+5. **测试中的日志必须有上下文** — 使用 `t.Logf` 输出关键中间值，便于失败时快速定位
+
+### 断言规范
+
+```go
+// ✅ 好：清晰的失败信息
+if got != want {
+    t.Errorf("ComputeChecksum() = %s, want %s", got, want)
+}
+
+// ✅ 好：使用子测试隔离
+t.Run("empty input", func(t *testing.T) {
+    result := ComputeChecksum(nil)
+    if result != "" {
+        t.Errorf("expected empty string, got %q", result)
+    }
+})
+
+// ❌ 差：无上下文的断言
+if result != expected {
+    t.Fatal("not equal")
+}
+```
+
+---
+
+## 🔄 开发流程强制要求
+
+### 功能开发完成后
+
+1. **必须编写/更新对应的测试用例**，覆盖：
+   - 正常路径（Happy Path）
+   - 边界条件（空值、零值、极端输入）
+   - 错误路径（预期的错误处理）
+2. 新增的 `util/` 函数必须有对应的单元测试
+3. 新增的 `dto/` 类型如有自定义序列化逻辑，必须有序列化/反序列化测试
+4. 新增的 `service/` 方法建议有单元测试或集成测试
+5. Bug 修复必须附带**回归测试**，防止问题复现
+
+### 提交前
+
+1. **必须运行全量测试**：
+
+```bash
+go test -count=1 ./...
+```
+
+2. **全部测试必须 PASS**，任何 FAIL 都不允许提交
+3. 如有临时跳过的测试（`t.Skip()`），必须在注释中说明原因和恢复时间
+
+### 运行命令速查
+
+```bash
+# 运行全量测试
+go test -count=1 ./...
+
+# 运行指定目录测试
+go test -v -count=1 ./test/message_checksum/
+
+# 运行指定测试函数
+go test -v -count=1 -run TestChecksumDifference ./test/message_checksum/
+
+# 运行 internal 包的单元测试
+go test -v -count=1 ./internal/util/
+
+# 带覆盖率运行
+go test -count=1 -cover ./internal/...
+
+# 生成覆盖率报告
+go test -count=1 -coverprofile=coverage.out ./internal/...
+go tool cover -html=coverage.out -o coverage.html
+```
+
+---
+
+## 🚫 禁止事项
+
+1. **禁止提交不通过的测试** — 所有测试必须 PASS 才能提交
+2. **禁止删除已有的测试用例** — 除非对应功能已删除
+3. **禁止在测试中硬编码环境相关路径** — 使用 `t.TempDir()`、`os.CreateTemp()` 等
+4. **禁止测试间相互依赖** — 每个测试必须独立可运行
+5. **禁止使用 `time.Sleep()` 做同步** — 使用 channel、WaitGroup 或 deadline

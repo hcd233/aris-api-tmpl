@@ -31,3 +31,8 @@ logs/
 # Temporary files
 *.tmp
 *.temp
+
+# Code Buddy
+.codebuddy/plans
+.codebuddy/memory
+.codebuddy/*.md
