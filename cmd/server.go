@@ -1,24 +1,33 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"os"
+	"os/signal"
 	"runtime/debug"
+	"syscall"
+	"time"
 
+	"github.com/gofiber/fiber/v2"
 	"github.com/hcd233/aris-api-tmpl/internal/api"
 	"github.com/hcd233/aris-api-tmpl/internal/config"
+	"github.com/hcd233/aris-api-tmpl/internal/cron"
 	"github.com/hcd233/aris-api-tmpl/internal/enum"
-	"github.com/hcd233/aris-api-tmpl/internal/logger"
-	"github.com/hcd233/aris-api-tmpl/internal/middleware"
-	"go.uber.org/zap"
-
 	"github.com/hcd233/aris-api-tmpl/internal/infrastructure/cache"
 	"github.com/hcd233/aris-api-tmpl/internal/infrastructure/database"
+	"github.com/hcd233/aris-api-tmpl/internal/infrastructure/pool"
 	"github.com/hcd233/aris-api-tmpl/internal/infrastructure/storage"
+	"github.com/hcd233/aris-api-tmpl/internal/logger"
+	"github.com/hcd233/aris-api-tmpl/internal/middleware"
 	"github.com/hcd233/aris-api-tmpl/internal/router"
 	"github.com/samber/lo"
 	"github.com/spf13/cobra"
+	"go.uber.org/zap"
 )
+
+// shutdownTimeout 优雅关闭的最大超时时间
+const shutdownTimeout = 60 * time.Second
 
 var serverCmd = &cobra.Command{
 	Use:   "server",
@@ -36,7 +45,6 @@ var startServerCmd = &cobra.Command{
 				logger.Logger().Error("[Server] Start server panic", zap.Any("error", r), zap.ByteString("stack", debug.Stack()))
 				os.Exit(1)
 			}
-			os.Exit(0)
 		}()
 		host, port := lo.Must1(cmd.Flags().GetString("host")), lo.Must1(cmd.Flags().GetString("port"))
 
@@ -70,8 +78,82 @@ var startServerCmd = &cobra.Command{
 		}
 		router.RegisterAPIRouter()
 
-		lo.Must0(app.Listen(fmt.Sprintf("%s:%s", host, port)))
+		// 启动 HTTP 服务（在 goroutine 中运行，主 goroutine 用于信号监听）
+		listenAddr := fmt.Sprintf("%s:%s", host, port)
+		listenErr := make(chan error, 1)
+		go func() {
+			listenErr <- app.Listen(listenAddr)
+		}()
+
+		// 监听关闭信号（SIGINT/SIGTERM）
+		quit := make(chan os.Signal, 1)
+		signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+
+		// 事件循环：处理关闭信号
+		select {
+		case err := <-listenErr:
+			// HTTP 服务意外退出
+			if err != nil {
+				logger.Logger().Error("[Server] HTTP server exited unexpectedly", zap.Error(err))
+				os.Exit(1)
+			}
+		case sig := <-quit:
+			logger.Logger().Info("[Server] Received shutdown signal, starting graceful shutdown...", zap.String("signal", sig.String()))
+			gracefulShutdown(app)
+		}
 	},
+}
+
+// gracefulShutdown 按序执行优雅关闭流程
+//
+// 关闭顺序：HTTP 服务 → 协程池 → 定时任务 → 数据库 → Redis
+//
+//	@param app *fiber.App
+//	@author centonhuang
+//	@update 2026-03-23 10:00:00
+func gracefulShutdown(app *fiber.App) {
+	ctx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
+	defer cancel()
+
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+
+		// Step 1: 停止接受新 HTTP 请求，等待现有请求完成
+		logger.Logger().Info("[Server] Step 1/5: Shutting down HTTP server...")
+		if err := app.ShutdownWithTimeout(30 * time.Second); err != nil {
+			logger.Logger().Error("[Server] HTTP server shutdown error", zap.Error(err))
+		}
+
+		// Step 2: 停止协程池（等待所有排队的任务完成）
+		logger.Logger().Info("[Server] Step 2/5: Stopping pool manager...")
+		pool.StopPoolManager()
+
+		// Step 3: 停止定时任务
+		logger.Logger().Info("[Server] Step 3/5: Stopping cron jobs...")
+		cron.StopCronJobs()
+
+		// Step 4: 关闭数据库连接池
+		logger.Logger().Info("[Server] Step 4/5: Closing database connection...")
+		if err := database.CloseDatabase(); err != nil {
+			logger.Logger().Error("[Server] Database close error", zap.Error(err))
+		}
+
+		// Step 5: 关闭 Redis 连接
+		logger.Logger().Info("[Server] Step 5/5: Closing Redis connection...")
+		if err := cache.CloseCache(); err != nil {
+			logger.Logger().Error("[Server] Redis close error", zap.Error(err))
+		}
+
+		logger.Logger().Info("[Server] Graceful shutdown completed")
+	}()
+
+	select {
+	case <-done:
+		// 正常关闭完成
+	case <-ctx.Done():
+		logger.Logger().Error("[Server] Graceful shutdown timed out, forcing exit", zap.Duration("timeout", shutdownTimeout))
+	}
 }
 
 func init() {
