@@ -97,7 +97,9 @@ func (dao *baseDAO[ModelT]) Get(db *gorm.DB, where *ModelT, fields []string) (da
 }
 
 func (dao *baseDAO[ModelT]) BatchGet(db *gorm.DB, where *ModelT, fields []string) (data []*ModelT, err error) {
-	err = db.Select(fields).Where(where).Where("deleted_at = 0").FindInBatches(&data, config.SQLBatchSize, func(tx *gorm.DB, n int) error {
+	var batchData []*ModelT
+	err = db.Select(fields).Where(where).Where("deleted_at = 0").FindInBatches(&batchData, config.SQLBatchSize, func(tx *gorm.DB, batch int) error {
+		data = append(data, batchData...)
 		return nil
 	}).Error
 	return
@@ -117,7 +119,9 @@ func (dao *baseDAO[ModelT]) BatchGetByField(db *gorm.DB, whereField string, valu
 	if values == nil {
 		return []*ModelT{}, nil
 	}
-	err = db.Select(selectFields).Where(whereField+" IN ?", values).Where("deleted_at = 0").FindInBatches(&data, config.SQLBatchSize, func(tx *gorm.DB, n int) error {
+	var batchData []*ModelT
+	err = db.Select(selectFields).Where(whereField+" IN ?", values).Where("deleted_at = 0").FindInBatches(&batchData, config.SQLBatchSize, func(tx *gorm.DB, batch int) error {
+		data = append(data, batchData...)
 		return nil
 	}).Error
 	return
@@ -136,7 +140,9 @@ func (dao *baseDAO[ModelT]) BatchGetByIDs(db *gorm.DB, ids []uint, fields []stri
 	if len(ids) == 0 {
 		return []*ModelT{}, nil
 	}
-	err = db.Select(fields).Where("id IN ?", ids).Where("deleted_at = 0").FindInBatches(&data, config.SQLBatchSize, func(tx *gorm.DB, n int) error {
+	var batchData []*ModelT
+	err = db.Select(fields).Where("id IN ?", ids).Where("deleted_at = 0").FindInBatches(&batchData, config.SQLBatchSize, func(tx *gorm.DB, batch int) error {
+		data = append(data, batchData...)
 		return nil
 	}).Error
 	return
