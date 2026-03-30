@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/hcd233/aris-api-tmpl/internal/common/constant"
+	"github.com/hcd233/aris-api-tmpl/internal/common/ierr"
 	"github.com/hcd233/aris-api-tmpl/internal/dto"
 	"github.com/hcd233/aris-api-tmpl/internal/infrastructure/database"
 	"github.com/hcd233/aris-api-tmpl/internal/infrastructure/database/dao"
@@ -60,11 +61,11 @@ func (s *userService) GetCurUser(ctx context.Context, _ *dto.EmptyReq) (*dto.Get
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			logger.Error("[UserService] user not found")
-			rsp.Error = constant.ErrDataNotExists
+			rsp.Error = ierr.ErrDataNotExists.BizError()
 			return rsp, nil
 		}
 		logger.Error("[UserService] failed to get user by id", zap.Error(err))
-		rsp.Error = constant.ErrInternalError
+		rsp.Error = ierr.ErrDBQuery.BizError()
 		return rsp, nil
 	}
 
@@ -104,7 +105,7 @@ func (s *userService) UpdateUser(ctx context.Context, req *dto.UpdateUserReq) (*
 		"avatar": req.Body.User.Avatar,
 	}); err != nil {
 		logger.Error("[UserService] failed to update user", zap.Error(err))
-		rsp.Error = constant.ErrInternalError
+		rsp.Error = ierr.ErrDBUpdate.BizError()
 		return rsp, nil
 	}
 

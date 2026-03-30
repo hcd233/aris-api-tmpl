@@ -6,8 +6,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/hcd233/aris-api-tmpl/internal/common/constant"
 	"github.com/hcd233/aris-api-tmpl/internal/common/enum"
+	"github.com/hcd233/aris-api-tmpl/internal/common/ierr"
 	"github.com/hcd233/aris-api-tmpl/internal/config"
 	"github.com/hcd233/aris-api-tmpl/internal/dto"
 	"github.com/hcd233/aris-api-tmpl/internal/infrastructure/database"
@@ -105,7 +105,7 @@ func (s *oauth2Service) Callback(ctx context.Context, req *dto.CallbackReq) (*dt
 			zap.String("platform", req.Body.Platform),
 			zap.String("state", req.Body.State),
 			zap.String("expectedState", config.Oauth2StateString))
-		rsp.Error = constant.ErrUnauthorized
+		rsp.Error = ierr.ErrUnauthorized.BizError()
 		return rsp, nil
 	}
 
@@ -120,7 +120,7 @@ func (s *oauth2Service) Callback(ctx context.Context, req *dto.CallbackReq) (*dt
 			zap.String("platform", req.Body.Platform),
 			zap.String("code", req.Body.Code),
 			zap.Error(err))
-		rsp.Error = constant.ErrUnauthorized
+		rsp.Error = ierr.ErrOAuth2Exchange.BizError()
 		return rsp, nil
 	}
 
@@ -134,7 +134,7 @@ func (s *oauth2Service) Callback(ctx context.Context, req *dto.CallbackReq) (*dt
 		logger.Error("[Oauth2Service] failed to get user info",
 			zap.String("platform", req.Body.Platform),
 			zap.Error(err))
-		rsp.Error = constant.ErrInternalError
+		rsp.Error = ierr.ErrOAuth2UserInfo.BizError()
 		return rsp, nil
 	}
 
@@ -149,7 +149,7 @@ func (s *oauth2Service) Callback(ctx context.Context, req *dto.CallbackReq) (*dt
 		user, err = s.userDAO.Get(db, &model.User{GoogleBindID: thirdPartyID}, []string{"id"})
 	default:
 		logger.Error("[Oauth2Service] invalid platform", zap.String("platform", req.Body.Platform))
-		rsp.Error = constant.ErrInternalError
+		rsp.Error = ierr.ErrInternal.BizError()
 		return rsp, nil
 	}
 
@@ -158,7 +158,7 @@ func (s *oauth2Service) Callback(ctx context.Context, req *dto.CallbackReq) (*dt
 			zap.String("platform", req.Body.Platform),
 			zap.String("thirdPartyID", thirdPartyID),
 			zap.Error(err))
-		rsp.Error = constant.ErrInternalError
+		rsp.Error = ierr.ErrDBQuery.BizError()
 		return rsp, nil
 	}
 
@@ -170,7 +170,7 @@ func (s *oauth2Service) Callback(ctx context.Context, req *dto.CallbackReq) (*dt
 			logger.Error("[Oauth2Service] failed to update user login time",
 				zap.String("platform", req.Body.Platform),
 				zap.Error(err))
-			rsp.Error = constant.ErrInternalError
+			rsp.Error = ierr.ErrDBUpdate.BizError()
 			return rsp, nil
 		}
 	} else {
@@ -198,7 +198,7 @@ func (s *oauth2Service) Callback(ctx context.Context, req *dto.CallbackReq) (*dt
 				zap.String("platform", req.Body.Platform),
 				zap.String("userName", userName),
 				zap.Error(err))
-			rsp.Error = constant.ErrInternalError
+			rsp.Error = ierr.ErrDBCreate.BizError()
 			return rsp, nil
 		}
 
@@ -207,7 +207,7 @@ func (s *oauth2Service) Callback(ctx context.Context, req *dto.CallbackReq) (*dt
 			logger.Error("[Oauth2Service] failed to create audio dir",
 				zap.String("platform", req.Body.Platform),
 				zap.Error(err))
-			rsp.Error = constant.ErrInternalError
+			rsp.Error = ierr.ErrObjStorage.BizError()
 			return rsp, nil
 		}
 		logger.Info("[Oauth2Service] audio dir created", zap.String("platform", req.Body.Platform))
@@ -219,7 +219,7 @@ func (s *oauth2Service) Callback(ctx context.Context, req *dto.CallbackReq) (*dt
 		logger.Error("[Oauth2Service] failed to encode access token",
 			zap.String("platform", req.Body.Platform),
 			zap.Error(err))
-		rsp.Error = constant.ErrInternalError
+		rsp.Error = ierr.ErrJWTEncode.BizError()
 		return rsp, nil
 	}
 
@@ -228,7 +228,7 @@ func (s *oauth2Service) Callback(ctx context.Context, req *dto.CallbackReq) (*dt
 		logger.Error("[Oauth2Service] failed to encode refresh token",
 			zap.String("platform", req.Body.Platform),
 			zap.Error(err))
-		rsp.Error = constant.ErrInternalError
+		rsp.Error = ierr.ErrJWTEncode.BizError()
 		return rsp, nil
 	}
 

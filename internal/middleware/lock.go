@@ -7,6 +7,7 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/google/uuid"
 	"github.com/hcd233/aris-api-tmpl/internal/common/constant"
+	"github.com/hcd233/aris-api-tmpl/internal/common/ierr"
 	"github.com/hcd233/aris-api-tmpl/internal/lock"
 	"github.com/hcd233/aris-api-tmpl/internal/logger"
 	"github.com/hcd233/aris-api-tmpl/internal/util"
@@ -31,7 +32,7 @@ func RedisLockMiddleware(serviceName, key string, expire time.Duration) func(ctx
 		value := ctx.Context().Value(key)
 		if value == nil {
 			logger.Error("[RedisLockMiddleware] value is nil", zap.String("key", key))
-			lo.Must0(util.WriteErrorResponse(ctx.BodyWriter(), constant.ErrInternalError))
+			lo.Must0(util.WriteErrorResponse(ctx.BodyWriter(), ierr.ErrInternal.BizError()))
 			return
 		}
 
@@ -41,12 +42,12 @@ func RedisLockMiddleware(serviceName, key string, expire time.Duration) func(ctx
 		success, err := locker.Lock(ctx.Context(), lockKey, lockValue, expire)
 		if err != nil {
 			logger.Error("[RedisLockMiddleware] lock resource error", zap.Error(err))
-			lo.Must0(util.WriteErrorResponse(ctx.BodyWriter(), constant.ErrInternalError))
+			lo.Must0(util.WriteErrorResponse(ctx.BodyWriter(), ierr.ErrInternal.BizError()))
 			return
 		}
 		if !success {
 			logger.Info("[RedisLockMiddleware] lock resource is already locked", zap.String("lockKey", lockKey))
-			lo.Must0(util.WriteErrorResponse(ctx.BodyWriter(), constant.ErrTooManyRequests))
+			lo.Must0(util.WriteErrorResponse(ctx.BodyWriter(), ierr.ErrResourceLocked.BizError()))
 			return
 		}
 
