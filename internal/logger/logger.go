@@ -59,13 +59,19 @@ func Logger() *zap.Logger {
 func WithCtx(ctx context.Context) *zap.Logger {
 	logger := defaultLogger
 	if traceID := ctx.Value(constant.CtxKeyTraceID); traceID != nil {
-		logger = logger.With(zap.String(constant.CtxKeyTraceID, traceID.(string)))
+		if value, ok := traceID.(string); ok {
+			logger = logger.With(zap.String(constant.CtxKeyTraceID, value))
+		}
 	}
 	if userID := ctx.Value(constant.CtxKeyUserID); userID != nil {
-		logger = logger.With(zap.Uint(constant.CtxKeyUserID, userID.(uint)))
+		if value, ok := userID.(uint); ok {
+			logger = logger.With(zap.Uint(constant.CtxKeyUserID, value))
+		}
 	}
 	if userName := ctx.Value(constant.CtxKeyUserName); userName != nil {
-		logger = logger.With(zap.String(constant.CtxKeyUserName, userName.(string)))
+		if value, ok := userName.(string); ok {
+			logger = logger.With(zap.String(constant.CtxKeyUserName, value))
+		}
 	}
 	return logger
 }
@@ -79,13 +85,19 @@ func WithCtx(ctx context.Context) *zap.Logger {
 func WithFCtx(c *fiber.Ctx) *zap.Logger {
 	logger := defaultLogger
 	if traceID := c.Locals(constant.CtxKeyTraceID); traceID != nil {
-		logger = logger.With(zap.String(constant.CtxKeyTraceID, traceID.(string)))
+		if value, ok := traceID.(string); ok {
+			logger = logger.With(zap.String(constant.CtxKeyTraceID, value))
+		}
 	}
 	if userID := c.Locals(constant.CtxKeyUserID); userID != nil {
-		logger = logger.With(zap.Uint(constant.CtxKeyUserID, userID.(uint)))
+		if value, ok := userID.(uint); ok {
+			logger = logger.With(zap.Uint(constant.CtxKeyUserID, value))
+		}
 	}
 	if userName := c.Locals(constant.CtxKeyUserName); userName != nil {
-		logger = logger.With(zap.String(constant.CtxKeyUserName, userName.(string)))
+		if value, ok := userName.(string); ok {
+			logger = logger.With(zap.String(constant.CtxKeyUserName, value))
+		}
 	}
 	return logger
 }

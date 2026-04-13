@@ -16,8 +16,8 @@ import (
 	"github.com/hcd233/aris-api-tmpl/internal/enum"
 	"github.com/hcd233/aris-api-tmpl/internal/infrastructure/cache"
 	"github.com/hcd233/aris-api-tmpl/internal/infrastructure/database"
+	"github.com/hcd233/aris-api-tmpl/internal/infrastructure/httpclient"
 	"github.com/hcd233/aris-api-tmpl/internal/infrastructure/pool"
-	"github.com/hcd233/aris-api-tmpl/internal/infrastructure/storage"
 	"github.com/hcd233/aris-api-tmpl/internal/logger"
 	"github.com/hcd233/aris-api-tmpl/internal/middleware"
 	"github.com/hcd233/aris-api-tmpl/internal/router"
@@ -55,11 +55,14 @@ var startServerCmd = &cobra.Command{
 			zap.Int("maxHeaderBytes", config.MaxHeaderBytes),
 			zap.Int("poolWorkers", config.PoolWorkers),
 			zap.Int("poolQueueSize", config.PoolQueueSize),
+			zap.Strings("trustedProxies", config.TrustedProxies),
 		)
 
 		database.InitDatabase()
 		cache.InitCache()
-		storage.InitObjectStorage()
+		httpclient.InitHTTPClient()
+		pool.InitPoolManager()
+		// storage.InitObjectStorage()
 		// cron.InitCronJobs()
 
 		app := api.GetFiberApp()

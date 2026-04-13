@@ -19,7 +19,7 @@ import (
 //
 //	author centonhuang
 //	update 2024-10-17 02:32:22
-type baseDAO[ModelT interface{}] struct{}
+type baseDAO[ModelT any] struct{}
 
 // Create 创建数据
 //
@@ -52,7 +52,7 @@ func (dao *baseDAO[ModelT]) BatchCreate(db *gorm.DB, data []*ModelT) (err error)
 //	return Update
 //	author centonhuang
 //	update 2024-10-17 02:52:18
-func (dao *baseDAO[ModelT]) Update(db *gorm.DB, data *ModelT, info map[string]interface{}) (err error) {
+func (dao *baseDAO[ModelT]) Update(db *gorm.DB, data *ModelT, info map[string]any) (err error) {
 	updateAtField := "updated_at"
 	info[updateAtField] = time.Now().UTC()
 
@@ -73,6 +73,17 @@ func (dao *baseDAO[ModelT]) Update(db *gorm.DB, data *ModelT, info map[string]in
 //	update 2024-10-17 02:52:33
 func (dao *baseDAO[ModelT]) Delete(db *gorm.DB, data *ModelT) (err error) {
 	err = db.Model(data).Update("deleted_at", time.Now().UTC().Unix()).Error
+	return
+}
+
+// BatchDeleteByField 根据指定字段的多个值批量软删除数据。
+func (dao *baseDAO[ModelT]) BatchDeleteByField(db *gorm.DB, whereField string, values any) (err error) {
+	if values == nil {
+		return nil
+	}
+
+	var model ModelT
+	err = db.Model(&model).Where(whereField+" IN ?", values).Update("deleted_at", time.Now().UTC().Unix()).Error
 	return
 }
 
@@ -102,6 +113,13 @@ func (dao *baseDAO[ModelT]) BatchGet(db *gorm.DB, where *ModelT, fields []string
 		data = append(data, batchData...)
 		return nil
 	}).Error
+	return
+}
+
+// Count 统计满足条件的记录数。
+func (dao *baseDAO[ModelT]) Count(db *gorm.DB, where *ModelT) (count int64, err error) {
+	var model ModelT
+	err = db.Model(&model).Where(where).Where("deleted_at = 0").Count(&count).Error
 	return
 }
 
@@ -146,6 +164,13 @@ func (dao *baseDAO[ModelT]) BatchGetByIDs(db *gorm.DB, ids []uint, fields []stri
 		return nil
 	}).Error
 	return
+}
+
+// HardDeleteSoftDeleted 硬删除所有已软删除的记录。
+func (dao *baseDAO[ModelT]) HardDeleteSoftDeleted(db *gorm.DB) (int64, error) {
+	var model ModelT
+	result := db.Unscoped().Where("deleted_at != 0").Delete(&model)
+	return result.RowsAffected, result.Error
 }
 
 // Paginate 分页查询
