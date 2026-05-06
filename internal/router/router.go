@@ -1,18 +1,22 @@
-// Package router 路由
+// Package router 路由。
 package router
 
 import (
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/gofiber/fiber/v2"
-	"github.com/hcd233/aris-api-tmpl/internal/api"
+	"github.com/hcd233/aris-api-tmpl/internal/handler"
 )
 
-// RegisterDocsRouter 注册文档路由
-//
-//	@author centonhuang
-//	@update 2025-11-10 17:26:08
-func RegisterDocsRouter() {
-	app := api.GetFiberApp()
+// APIRouterDependencies API 路由依赖。
+type APIRouterDependencies struct {
+	PingHandler   handler.PingHandler
+	TokenHandler  handler.TokenHandler
+	Oauth2Handler handler.Oauth2Handler
+	UserHandler   handler.UserHandler
+}
+
+// RegisterDocsRouter 注册文档路由。
+func RegisterDocsRouter(app *fiber.App) {
 	app.Get("/docs", func(c *fiber.Ctx) error {
 		html := `<!doctype html>
 <html>
@@ -34,23 +38,19 @@ func RegisterDocsRouter() {
 	})
 }
 
-// RegisterAPIRouter 注册API路由
-//
-//	@author centonhuang
-//	@update 2025-11-10 17:26:08
-func RegisterAPIRouter() {
-	api := api.GetHumaAPI()
-	apiGroup := huma.NewGroup(api, "/api")
+// RegisterAPIRouter 注册 API 路由。
+func RegisterAPIRouter(humaAPI huma.API, deps APIRouterDependencies) {
+	apiGroup := huma.NewGroup(humaAPI, "/api")
 	v1Group := huma.NewGroup(apiGroup, "/v1")
 
-	initHealthRouter(api)
+	initHealthRouter(humaAPI, deps.PingHandler)
 
 	tokenGroup := huma.NewGroup(v1Group, "/token")
-	initTokenRouter(tokenGroup)
+	initTokenRouter(tokenGroup, deps.TokenHandler)
 
 	oauth2Group := huma.NewGroup(v1Group, "/oauth2")
-	initOauth2Router(oauth2Group)
+	initOauth2Router(oauth2Group, deps.Oauth2Handler)
 
 	userGroup := huma.NewGroup(v1Group, "/user")
-	initUserRouter(userGroup)
+	initUserRouter(userGroup, deps.UserHandler)
 }

@@ -9,9 +9,7 @@ import (
 	"github.com/hcd233/aris-api-tmpl/internal/middleware"
 )
 
-func initUserRouter(userGroup huma.API) {
-	userHandler := handler.NewUserHandler()
-
+func initUserRouter(userGroup huma.API, userHandler handler.UserHandler) {
 	userGroup.UseMiddleware(middleware.JwtMiddleware())
 
 	huma.Register(userGroup, huma.Operation{

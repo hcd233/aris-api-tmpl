@@ -7,9 +7,7 @@ import (
 	"github.com/hcd233/aris-api-tmpl/internal/handler"
 )
 
-func initTokenRouter(tokenGroup huma.API) {
-	tokenHandler := handler.NewTokenHandler()
-
+func initTokenRouter(tokenGroup huma.API, tokenHandler handler.TokenHandler) {
 	huma.Register(tokenGroup, huma.Operation{
 		OperationID: "refreshToken",
 		Method:      http.MethodPost,

@@ -10,17 +10,15 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/hcd233/aris-api-tmpl/internal/api"
+	"github.com/hcd233/aris-api-tmpl/internal/bootstrap"
 	"github.com/hcd233/aris-api-tmpl/internal/config"
 	"github.com/hcd233/aris-api-tmpl/internal/cron"
-	"github.com/hcd233/aris-api-tmpl/internal/enum"
 	"github.com/hcd233/aris-api-tmpl/internal/infrastructure/cache"
 	"github.com/hcd233/aris-api-tmpl/internal/infrastructure/database"
 	"github.com/hcd233/aris-api-tmpl/internal/infrastructure/httpclient"
 	"github.com/hcd233/aris-api-tmpl/internal/infrastructure/pool"
 	"github.com/hcd233/aris-api-tmpl/internal/logger"
 	"github.com/hcd233/aris-api-tmpl/internal/middleware"
-	"github.com/hcd233/aris-api-tmpl/internal/router"
 	"github.com/samber/lo"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
@@ -62,11 +60,13 @@ var startServerCmd = &cobra.Command{
 		cache.InitCache()
 		httpclient.InitHTTPClient()
 		pool.InitPoolManager()
-		// storage.InitObjectStorage()
-		// cron.InitCronJobs()
 
-		app := api.GetFiberApp()
-
+		server, err := bootstrap.BuildServer()
+		if err != nil {
+			logger.Logger().Error("[Server] Build server failed", zap.Error(err))
+			os.Exit(1)
+		}
+		app := server.App
 		app.Use(
 			middleware.RecoverMiddleware(),
 			middleware.FgprofMiddleware(),
@@ -80,27 +80,22 @@ var startServerCmd = &cobra.Command{
 				},
 			}),
 		)
-
-		if config.Env != enum.EnvProduction {
-			router.RegisterDocsRouter()
+		if err := bootstrap.RegisterRoutes(server); err != nil {
+			logger.Logger().Error("[Server] Register routes failed", zap.Error(err))
+			os.Exit(1)
 		}
-		router.RegisterAPIRouter()
 
-		// 启动 HTTP 服务（在 goroutine 中运行，主 goroutine 用于信号监听）
 		listenAddr := fmt.Sprintf("%s:%s", host, port)
 		listenErr := make(chan error, 1)
 		go func() {
 			listenErr <- app.Listen(listenAddr)
 		}()
 
-		// 监听关闭信号（SIGINT/SIGTERM）
 		quit := make(chan os.Signal, 1)
 		signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 
-		// 事件循环：处理关闭信号
 		select {
 		case err := <-listenErr:
-			// HTTP 服务意外退出
 			if err != nil {
 				logger.Logger().Error("[Server] HTTP server exited unexpectedly", zap.Error(err))
 				os.Exit(1)
@@ -113,12 +108,6 @@ var startServerCmd = &cobra.Command{
 }
 
 // gracefulShutdown 按序执行优雅关闭流程
-//
-// 关闭顺序：HTTP 服务 → 协程池 → 定时任务 → 数据库 → Redis
-//
-//	@param app *fiber.App
-//	@author centonhuang
-//	@update 2026-03-23 10:00:00
 func gracefulShutdown(app *fiber.App) {
 	ctx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
 	defer cancel()
@@ -127,27 +116,22 @@ func gracefulShutdown(app *fiber.App) {
 	go func() {
 		defer close(done)
 
-		// Step 1: 停止接受新 HTTP 请求，等待现有请求完成
 		logger.Logger().Info("[Server] Step 1/5: Shutting down HTTP server...")
 		if err := app.ShutdownWithTimeout(30 * time.Second); err != nil {
 			logger.Logger().Error("[Server] HTTP server shutdown error", zap.Error(err))
 		}
 
-		// Step 2: 停止协程池（等待所有排队的任务完成）
 		logger.Logger().Info("[Server] Step 2/5: Stopping pool manager...")
 		pool.StopPoolManager()
 
-		// Step 3: 停止定时任务
 		logger.Logger().Info("[Server] Step 3/5: Stopping cron jobs...")
 		cron.StopCronJobs()
 
-		// Step 4: 关闭数据库连接池
 		logger.Logger().Info("[Server] Step 4/5: Closing database connection...")
 		if err := database.CloseDatabase(); err != nil {
 			logger.Logger().Error("[Server] Database close error", zap.Error(err))
 		}
 
-		// Step 5: 关闭 Redis 连接
 		logger.Logger().Info("[Server] Step 5/5: Closing Redis connection...")
 		if err := cache.CloseCache(); err != nil {
 			logger.Logger().Error("[Server] Redis close error", zap.Error(err))
@@ -158,7 +142,6 @@ func gracefulShutdown(app *fiber.App) {
 
 	select {
 	case <-done:
-		// 正常关闭完成
 	case <-ctx.Done():
 		logger.Logger().Error("[Server] Graceful shutdown timed out, forcing exit", zap.Duration("timeout", shutdownTimeout))
 	}

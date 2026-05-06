@@ -7,19 +7,9 @@ import (
 	"github.com/hcd233/aris-api-tmpl/internal/config"
 )
 
-var fiberApp *fiber.App
-
-// GetFiberApp 获取 Fiber 应用实例
-//
-//	@return *fiber.App
-//	@author centonhuang
-//	@update 2025-11-02 02:35:59
-func GetFiberApp() *fiber.App {
-	return fiberApp
-}
-
-func init() {
-	fiberApp = fiber.New(fiber.Config{
+// NewFiberApp 创建 Fiber 应用实例。
+func NewFiberApp() *fiber.App {
+	return fiber.New(fiber.Config{
 		Prefork:                 false,
 		ReadTimeout:             config.ReadTimeout,
 		WriteTimeout:            config.WriteTimeout,

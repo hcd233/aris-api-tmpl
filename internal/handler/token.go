@@ -2,44 +2,50 @@ package handler
 
 import (
 	"context"
+	"strings"
 
+	"github.com/hcd233/aris-api-tmpl/internal/application/identity/command"
+	"github.com/hcd233/aris-api-tmpl/internal/common/ierr"
 	"github.com/hcd233/aris-api-tmpl/internal/dto"
-	"github.com/hcd233/aris-api-tmpl/internal/service"
+	"github.com/hcd233/aris-api-tmpl/internal/logger"
 	"github.com/hcd233/aris-api-tmpl/internal/util"
+	"go.uber.org/zap"
 )
 
-// TokenHandler 令牌处理器
-//
-//	author centonhuang
-//	update 2025-01-05 21:00:00
+// TokenHandler 令牌处理器。
 type TokenHandler interface {
 	HandleRefreshToken(ctx context.Context, req *dto.RefreshTokenReq) (*dto.HTTPResponse[*dto.RefreshTokenRsp], error)
 }
 
+// TokenDependencies TokenHandler 依赖项。
+type TokenDependencies struct {
+	Refresh command.RefreshTokensHandler
+}
+
 type tokenHandler struct {
-	svc service.TokenService
+	refresh command.RefreshTokensHandler
 }
 
-// NewTokenHandler 创建令牌处理器
-//
-//	return TokenHandler
-//	author centonhuang
-//	update 2025-01-05 21:00:00
-func NewTokenHandler() TokenHandler {
-	return &tokenHandler{
-		svc: service.NewTokenService(),
-	}
+// NewTokenHandler 创建令牌处理器。
+func NewTokenHandler(deps TokenDependencies) TokenHandler {
+	return &tokenHandler{refresh: deps.Refresh}
 }
 
-// HandleRefreshToken 刷新令牌
-//
-//	@receiver h *tokenHandler
-//	@param ctx context.Context
-//	@param req *dto.RefreshTokenReq
-//	@return *dto.HTTPResponse[*dto.RefreshTokenRsp]
-//	@return error
-//	@author centonhuang
-//	@update 2025-11-11 04:58:25
+// HandleRefreshToken 刷新令牌。
 func (h *tokenHandler) HandleRefreshToken(ctx context.Context, req *dto.RefreshTokenReq) (*dto.HTTPResponse[*dto.RefreshTokenRsp], error) {
-	return util.WrapHTTPResponse(h.svc.RefreshToken(ctx, req))
+	rsp := &dto.RefreshTokenRsp{}
+	if req == nil || req.Body == nil || strings.TrimSpace(req.Body.RefreshToken) == "" {
+		rsp.Error = ierr.ErrValidation.BizError()
+		return util.WrapHTTPResponse(rsp, nil)
+	}
+	pair, err := h.refresh.Handle(ctx, command.RefreshTokensCommand{RefreshToken: req.Body.RefreshToken})
+	if err != nil {
+		logger.WithCtx(ctx).Warn("[TokenHandler] refresh token failed",
+			zap.String("refreshToken", util.MaskSecret(req.Body.RefreshToken)), zap.Error(err))
+		rsp.Error = ierr.ToBizError(err, ierr.ErrInternal.BizError())
+		return util.WrapHTTPResponse(rsp, nil)
+	}
+	rsp.AccessToken = pair.AccessToken()
+	rsp.RefreshToken = pair.RefreshToken()
+	return util.WrapHTTPResponse(rsp, nil)
 }

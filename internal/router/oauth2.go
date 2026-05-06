@@ -9,9 +9,7 @@ import (
 	"github.com/hcd233/aris-api-tmpl/internal/middleware"
 )
 
-func initOauth2Router(oauth2Group huma.API) {
-	oauth2Handler := handler.NewOauth2Handler()
-
+func initOauth2Router(oauth2Group huma.API, oauth2Handler handler.Oauth2Handler) {
 	huma.Register(oauth2Group, huma.Operation{
 		OperationID: "oauth2Login",
 		Method:      http.MethodGet,
