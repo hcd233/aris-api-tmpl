@@ -1,0 +1,90 @@
+version: "2"
+
+run:
+  tests: true
+  timeout: 5m
+  go: "1.25.1"
+
+linters:
+  default: none
+  enable:
+    - govet
+    - ineffassign
+    - unused
+    - misspell
+    - dupword
+    - gosec
+    - revive
+    - thelper
+    - usetesting
+
+  settings:
+    revive:
+      rules:
+        - name: blank-imports
+        - name: context-as-argument
+        - name: context-keys-type
+        - name: dot-imports
+        - name: error-return
+        - name: error-strings
+        - name: error-naming
+        - name: exported
+          disabled: true
+        - name: increment-decrement
+        - name: indent-error-flow
+        - name: range
+        - name: receiver-naming
+        - name: redefines-builtin-id
+        - name: superfluous-else
+        - name: time-naming
+        - name: unexported-return
+        - name: unreachable-code
+        - name: var-declaration
+
+    gosec:
+      excludes:
+        - G101
+        - G104
+        - G204
+        - G304
+        - G702
+
+    thelper:
+      test:
+        begin: true
+      benchmark:
+        begin: true
+
+    misspell:
+      locale: US
+
+  exclusions:
+    rules:
+      - linters:
+          - gosec
+        path: "(_test\\.go|^test/)"
+
+      - linters:
+          - revive
+        path: "(_test\\.go|^test/)"
+        text: "context-keys-type"
+
+      - linters:
+          - thelper
+          - usetesting
+        path: "^test/"
+
+    paths:
+      - "third_party"
+      - "vendor"
+      - ".worktrees"
+
+output:
+  formats:
+    text:
+      print-linter-name: true
+      print-issued-lines: true
+  sort-order:
+    - linter
+    - severity
+    - file

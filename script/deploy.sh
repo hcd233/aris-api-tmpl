@@ -1,13 +1,39 @@
-echo -e "\033[1;36mDeploying production environment...\033[0m"
+#!/usr/bin/env bash
+#
+# deploy.sh - 部署生产环境。
+set -euo pipefail
 
-echo -e "\033[1;32mPulling the latest Docker image...\033[0m"
-docker pull ghcr.io/hcd233/aris-api-tmpl:master
+cd "$(dirname "$0")/.."
 
-echo -e "\033[1;34mStarting up services with docker-compose...\033[0m"
-docker compose -f docker/docker-compose-single.yml up -d
+IMAGE_REPOSITORY="${IMAGE_REPOSITORY:-ghcr.io/hcd233/aris-api-tmpl}"
+BRANCH_NAME="${BRANCH_NAME:-$(git rev-parse --abbrev-ref HEAD)}"
+IMAGE_TAG="${IMAGE_TAG:-$(echo "${BRANCH_NAME}" | tr '/' '-')}"
+COMPOSE_FILE="${COMPOSE_FILE:-docker/docker-compose-single.yml}"
+SERVICE_NAME="${SERVICE_NAME:-aris-api-tmpl}"
 
-echo -e "\033[1;31mPruning unused Docker images...\033[0m"
-docker image prune -a -f
+printf '\033[1;36mDeploying production environment (branch: %s, image: %s:%s)...\033[0m\n' "${BRANCH_NAME}" "${IMAGE_REPOSITORY}" "${IMAGE_TAG}"
 
-echo -e "\033[1;33mDisplaying Docker logs for aris-api-tmpl...\033[0m"
-docker logs -f aris-api-tmpl --details
+if [ "${SKIP_GIT_PULL:-false}" != "true" ]; then
+    printf '\033[1;36mPulling the latest code...\033[0m\n'
+    git fetch --prune origin
+    git pull --ff-only origin "${BRANCH_NAME}"
+fi
+
+printf '\033[1;32mPulling Docker image...\033[0m\n'
+docker pull "${IMAGE_REPOSITORY}:${IMAGE_TAG}"
+
+printf '\033[1;34mStarting services with docker compose...\033[0m\n'
+export IMAGE_REPOSITORY IMAGE_TAG
+docker compose -f "${COMPOSE_FILE}" up -d
+
+if [ "${PRUNE_IMAGES:-false}" = "true" ]; then
+    printf '\033[1;31mPruning unused Docker images...\033[0m\n'
+    docker image prune -f
+fi
+
+printf '\033[1;33mRecent logs for %s...\033[0m\n' "${SERVICE_NAME}"
+if [ "${FOLLOW_LOGS:-false}" = "true" ]; then
+    docker logs -f "${SERVICE_NAME}" --details --tail 25
+else
+    docker logs "${SERVICE_NAME}" --details --tail 25
+fi

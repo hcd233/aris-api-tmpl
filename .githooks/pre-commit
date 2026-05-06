@@ -1,15 +1,10 @@
 #!/bin/sh
-# Pre-commit hook: run Go checks before committing
+# Pre-commit hook: run Go checks before committing.
+set -eu
 
-# Path to the Go binary — override if Go is installed elsewhere, e.g. /usr/local/go/bin/go
 GO_BIN="${GO_BIN:-go}"
-
-# Allow Go to automatically download and switch to the toolchain version
-# required by go.mod (e.g. go 1.25.1 when the system only has 1.22.x)
 export GOTOOLCHAIN=auto
-
-# Ensure common Go install locations are in PATH
-export PATH=$PATH:/usr/local/go/bin:$HOME/go/bin:$HOME/sdk/go/bin
+export PATH="$PATH:/usr/local/go/bin:$HOME/go/bin:$HOME/sdk/go/bin"
 
 PASS="\033[32m[PASS]\033[0m"
 FAIL="\033[31m[FAIL]\033[0m"
@@ -20,55 +15,40 @@ fail() {
     exit 1
 }
 
-# --------------------------------------------------------------------------
-# 1. gofmt — auto-format source files and re-stage changed files
-# --------------------------------------------------------------------------
-printf "$INFO Running gofmt -w ...\n"
-gofmt -w .
+printf "$INFO Running gofmt on tracked Go files...\n"
+git ls-files '*.go' | while IFS= read -r file; do
+    if [ -n "$file" ]; then
+        gofmt -w "$file"
+    fi
+done
 
-if ! git diff --quiet; then
-    FORMATTED=$(git diff --name-only)
-    printf "$INFO gofmt reformatted the following files (auto-staging):\n"
-    echo "$FORMATTED" | sed 's/^/       /'
-    echo ""
-    git add $FORMATTED
+FORMATTED=$(git diff --name-only -- '*.go')
+if [ -n "$FORMATTED" ]; then
+    printf "$INFO gofmt reformatted files, staging changes:\n"
+    printf '%s\n' "$FORMATTED" | sed 's/^/       /'
+    printf '%s\n' "$FORMATTED" | xargs git add
 fi
 printf "$PASS gofmt\n"
 
-# --------------------------------------------------------------------------
-# 2. go mod tidy — verify go.mod / go.sum are consistent and re-stage
-# --------------------------------------------------------------------------
 printf "$INFO Running go mod tidy...\n"
 $GO_BIN mod tidy
-
-if ! git diff --quiet go.mod go.sum; then
-    printf "$INFO go.mod or go.sum changed after 'go mod tidy' (auto-staging):\n"
-    git diff --name-only go.mod go.sum | sed 's/^/       /'
-    echo ""
+if ! git diff --quiet -- go.mod go.sum; then
+    printf "$INFO go.mod or go.sum changed, staging changes:\n"
+    git diff --name-only -- go.mod go.sum | sed 's/^/       /'
     git add go.mod go.sum
 fi
 printf "$PASS go mod tidy\n"
 
-# --------------------------------------------------------------------------
-# 3. go vet — static analysis
-# --------------------------------------------------------------------------
-printf "$INFO Running go vet ./...\n"
-
-if ! $GO_BIN vet ./... 2>&1; then
-    fail "go vet failed. Please fix the issues above before committing."
+printf "$INFO Running make lint...\n"
+if ! make lint; then
+    fail "make lint failed. Please fix the issues above before committing."
 fi
-printf "$PASS go vet\n"
+printf "$PASS make lint\n"
 
-# --------------------------------------------------------------------------
-# 4. go test — run all unit tests, block commit on any failure
-# --------------------------------------------------------------------------
-printf "$INFO Running go test -count=1 ./...\n"
-
-if ! $GO_BIN test -count=1 ./... 2>&1; then
-    fail "go test failed. All tests must pass before committing."
+printf "$INFO Running make test...\n"
+if ! make test; then
+    fail "make test failed. All tests must pass before committing."
 fi
-printf "$PASS go test\n"
+printf "$PASS make test\n"
 
-# --------------------------------------------------------------------------
-echo ""
-printf "$PASS All checks passed. Proceeding with commit.\n"
+printf "\n$PASS All checks passed. Proceeding with commit.\n"

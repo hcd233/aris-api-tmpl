@@ -13,9 +13,9 @@ import (
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:   "",
-	Short: "Aris Memory API",
-	Long:  `Aris Memory API`,
+	Use:   "aris-api-tmpl",
+	Short: "Aris API Tmpl",
+	Long:  `Aris API Tmpl is a production-ready Go backend template.`,
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.

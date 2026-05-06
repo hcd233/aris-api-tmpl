@@ -7,454 +7,299 @@
 <a name="english"></a>
 ## English
 
-### 📖 Introduction
+### Introduction
 
-A production-ready Go backend template built with modern technologies and best practices. This template provides a robust foundation for building RESTful APIs with authentication, database management, object storage, and more.
+`aris-api-tmpl` is a production-ready Go backend template for RESTful APIs. It includes authentication, OAuth2 login, PostgreSQL, Redis, object storage, OpenAPI documentation, Docker deployment, static checks, and Git hooks.
 
-### ✨ Features
+### Features
 
-- 🚀 **High Performance**: Built with [Fiber](https://gofiber.io/) framework and [Sonic](https://github.com/bytedance/sonic) JSON serialization
-- 🔐 **Authentication**: JWT-based authentication with access and refresh tokens
-- 🌐 **OAuth2 Integration**: Support for GitHub and Google OAuth2 login
-- 💾 **Database**: PostgreSQL with GORM ORM
-- 📦 **Object Storage**: Support for both MinIO and Tencent COS
-- 🔴 **Caching**: Redis integration for high-performance caching
-- 🤖 **AI Integration**: OpenAI client integration
-- 📝 **API Documentation**: Auto-generated OpenAPI V3 documentation
-- 🔒 **Middleware**: Comprehensive middleware stack including:
-  - JWT authentication
-  - CORS
-  - Rate limiting
-  - Request logging with trace ID
-  - Compression
-  - Recovery from panics
-  - Permission validation
-- 🎯 **Project Structure**: Clean architecture with separation of concerns
-- 🐳 **Docker Support**: Complete Docker Compose setup for easy deployment
-- ⏰ **Scheduled Tasks**: Cron job support
-- 📊 **Profiling**: Built-in fgprof for performance profiling
+- Fiber v2 + Huma typed API routes
+- JWT authentication with access and refresh tokens
+- GitHub and Google OAuth2 login
+- PostgreSQL with GORM
+- Redis cache
+- MinIO and Tencent COS object storage adapters
+- OpenAPI 3.1 documentation
+- Cobra command line interface
+- Zap logging with Lumberjack rotation
+- Middleware for CORS, compression, recovery, trace ID, request logging, rate limiting, and permission validation
+- Cron task support
+- Dockerfile, local full-stack Docker Compose, production/dev Compose templates
+- Makefile, static checks, and pre-commit hook
 
-### 🛠️ Tech Stack
+### Tech Stack
 
-- **Framework**: Fiber v2 + Huma
-- **Language**: Go 1.25.1
-- **Database**: PostgreSQL (with GORM)
-- **Cache**: Redis
-- **Object Storage**: MinIO / Tencent COS
-- **Authentication**: JWT, OAuth2 (GitHub, Google)
-- **API Docs**: OpenAPI V3
-- **CLI**: Cobra
-- **Configuration**: Viper
-- **Logging**: Zap with Lumberjack rotation
-- **JSON**: Sonic
+- Language: Go 1.25.1
+- Framework: Fiber v2 + Huma
+- Database: PostgreSQL + GORM
+- Cache: Redis
+- Object storage: MinIO / Tencent COS
+- CLI: Cobra
+- Configuration: Viper
+- Logging: Zap + Lumberjack
+- JSON: Sonic
 
-### 📁 Project Structure
+### Project Structure
 
-```
+```text
 .
-├── cmd                   # Command Line Interface 
-├── docker                # Docker configuration
-├── env                   # Environment variable template
-├── go.mod
-├── go.sum
+├── cmd                   # Cobra CLI commands
+├── docker                # Dockerfile and Compose files
+├── env                   # Environment templates
 ├── internal              # Internal implementation
-│   ├── api               # API related
-│   ├── common            # Common constants/enums/models
-│   ├── config            # Configuration management
+│   ├── api               # Fiber and Huma setup
+│   ├── common            # Common constants, enums, models, errors
+│   ├── config            # Environment configuration
 │   ├── cron              # Cron jobs
 │   ├── dto               # Data transfer objects
-│   ├── handler           # Handlers
-│   ├── infrastructure    # Infrastructure
-│   ├── jwt               # JWT related
-│   ├── lock              # Locks
-│   ├── logger            # Logger
-│   ├── middleware        # Middleware
-│   ├── oauth2            # OAuth2 related
-│   ├── router            # Router
-│   ├── service           # Service
+│   ├── handler           # HTTP handlers
+│   ├── infrastructure    # Database, cache, storage, HTTP client, pools
+│   ├── jwt               # JWT helpers
+│   ├── lock              # Lock helpers
+│   ├── logger            # Logger setup
+│   ├── middleware        # HTTP middleware
+│   ├── oauth2            # OAuth2 providers
+│   ├── router            # Route registration
+│   ├── service           # Business services
 │   └── util              # Utility functions
-├── LICENSE
+├── script                # Deployment scripts
+├── test                  # Integration/e2e/special tests
 ├── main.go
-└── README.md
+└── Makefile
 ```
 
-### 🚀 Quick Start
+### Quick Start
 
 #### Prerequisites
 
 - Go 1.25.1 or higher
-- Docker and Docker Compose (for containerized setup)
-- PostgreSQL (if running locally)
-- Redis (if running locally)
+- Docker and Docker Compose
 
-#### 1. Clone the Repository
-
-```bash
-git clone https://github.com/hcd233/aris-api-tmpl.git
-cd aris-api-tmpl
-```
-
-#### 2. Configure Environment Variables
-
-Copy the environment template and modify as needed:
+#### Configure environment files
 
 ```bash
 cp env/api.env.template env/api.env
-# Edit env/api.env with your configurations
+cp env/postgresql.env.template env/postgresql.env
+cp env/redis.env.template env/redis.env
+cp env/minio.env.template env/minio.env
 ```
 
-Key configurations to set:
-- Database credentials (`POSTGRES_*`)
-- Redis connection (`REDIS_*`)
-- JWT secrets (`JWT_ACCESS_TOKEN_SECRET`, `JWT_REFRESH_TOKEN_SECRET`)
-- OAuth2 credentials (if using OAuth2 login)
-- Object storage credentials (MinIO or COS)
-- OpenAI API key (if using AI features)
+Edit the generated files and replace placeholder secrets before running non-local environments.
 
-#### 3. Run with Docker Compose (Recommended)
+#### Run with Docker Compose
 
-Create required volumes:
 ```bash
-docker volume create postgresql-data
-docker volume create redis-data
-docker volume create minio-data
+docker compose -f docker/docker-compose.yml up -d --build
 ```
 
-Start all services:
-```bash
-docker compose -f docker/docker-compose.yml up -d
-```
+This starts PostgreSQL, Redis, MinIO, the migration job, and the API server at `http://localhost:8080`.
 
-This will start:
-- PostgreSQL database
-- Redis cache
-- MinIO object storage
-- The API server (accessible at http://localhost:8170)
+#### Run locally
 
-#### 4. Run Locally
-
-Install dependencies:
 ```bash
 go mod download
-```
-
-Run database migration:
-```bash
 go run main.go database migrate
-```
-
-Start the server:
-```bash
 go run main.go server start --host localhost --port 8080
 ```
 
-### 📚 API Documentation
+### API Documentation
 
-Once the server is running, access the OpenAPI V3 documentation at:
-```
+```text
 http://localhost:8080/docs
 ```
 
-### 🔑 Available Commands
+### Commands
 
 ```bash
-# Start the server
-go run main.go server start [--host HOST] [--port PORT]
+make build
+make build-dev
+make build-debug
+make lint
+make test
+make test-cover
 
-# Database migration
+go run main.go server start --host localhost --port 8080
 go run main.go database migrate
-
-# Object storage management (if applicable)
-go run main.go object [subcommand]
+go run main.go object bucket create
+go run main.go lint static ./...
 ```
 
-### 🔐 Authentication
-
-The API supports multiple authentication methods:
-
-1. **OAuth2**: Login via GitHub or Google
-   - `GET /v1/oauth2/github/login`
-   - `GET /v1/oauth2/google/login`
-
-2. **JWT Tokens**: After OAuth2 login, obtain access/refresh tokens
-   - `POST /v1/token/refresh` - Refresh access token
-
-### 🛡️ API Endpoints
+### API Endpoints
 
 - `GET /health` - Health check
 - `GET /ssehealth` - SSE health check
-- `GET /docs` - API documentation
-- `GET /v1/oauth2/{provider}/login` - OAuth2 login
-- `GET /v1/oauth2/{provider}/callback` - OAuth2 callback
-- `POST /v1/token/refresh` - Refresh JWT token
-- `GET /v1/user/current` - Get current user info (requires auth)
-- `GET /v1/user/{userID}` - Get user info by ID (requires auth)
-- `PATCH /v1/user` - Update user info (requires auth)
+- `GET /docs` - API documentation in non-production environments
+- `GET /api/v1/oauth2/login?platform=github` - GitHub OAuth2 login URL
+- `GET /api/v1/oauth2/login?platform=google` - Google OAuth2 login URL
+- `POST /api/v1/oauth2/callback` - OAuth2 callback exchange
+- `POST /api/v1/token/refresh` - Refresh JWT token
+- `GET /api/v1/user/current` - Get current user info
+- `PATCH /api/v1/user/` - Update current user info
 
-### 🔧 Development
+### Development Checks
 
-Build the binary:
 ```bash
-go build -o aris-api-tmpl main.go
+make lint
+go test -count=1 ./...
 ```
 
-Run tests (if available):
+Install the Git hook if desired:
+
 ```bash
-go test ./...
+bash .githooks/setup.sh
 ```
 
-### 📝 Environment Variables
+### License
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `PORT` | Server port | 8080 |
-| `READ_TIMEOUT` | Read timeout in seconds | 10 |
-| `WRITE_TIMEOUT` | Write timeout in seconds | 10 |
-| `LOG_LEVEL` | Logging level | INFO |
-| `POSTGRES_*` | PostgreSQL connection settings | - |
-| `REDIS_*` | Redis connection settings | - |
-| `JWT_ACCESS_TOKEN_EXPIRED` | Access token expiry | 12h |
-| `JWT_REFRESH_TOKEN_EXPIRED` | Refresh token expiry | 168h |
-| `OAUTH2_*` | OAuth2 provider settings | - |
-| `MINIO_*` | MinIO storage settings | - |
-| `COS_*` | Tencent COS storage settings | - |
-| `OPENAI_*` | OpenAI API settings | - |
-
-### 📄 License
-
-This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
-
-### 🤝 Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
+This project is licensed under the Apache License 2.0. See `LICENSE` for details.
 
 ---
 
 <a name="中文"></a>
 ## 中文
 
-### 📖 简介
+### 简介
 
-一个基于现代技术栈和最佳实践构建的生产级 Go 后端模板。该模板为构建具有身份验证、数据库管理、对象存储等功能的 RESTful API 提供了坚实的基础。
+`aris-api-tmpl` 是一个生产可用的 Go 后端模板，用于构建 RESTful API。项目内置认证、OAuth2 登录、PostgreSQL、Redis、对象存储、OpenAPI 文档、Docker 部署、静态检查和 Git hook。
 
-### ✨ 特性
+### 特性
 
-- 🚀 **高性能**: 使用 [Fiber](https://gofiber.io/) 框架和 [Sonic](https://github.com/bytedance/sonic) JSON 序列化
-- 🔐 **身份验证**: 基于 JWT 的身份验证,支持访问令牌和刷新令牌
-- 🌐 **OAuth2 集成**: 支持 GitHub 和 Google OAuth2 登录
-- 💾 **数据库**: PostgreSQL 配合 GORM ORM
-- 📦 **对象存储**: 支持 MinIO 和腾讯云 COS
-- 🔴 **缓存**: Redis 集成,提供高性能缓存
-- 🤖 **AI 集成**: OpenAI 客户端集成
-- 📝 **API 文档**: 自动生成的 OpenAPI V3 文档
-- 🔒 **中间件**: 完善的中间件栈,包括:
-  - JWT 身份验证
-  - CORS 跨域处理
-  - 请求限流
-  - 带追踪 ID 的请求日志
-  - 响应压缩
-  - Panic 恢复
-  - 权限验证
-- 🎯 **项目结构**: 清晰的架构设计,关注点分离
-- 🐳 **Docker 支持**: 完整的 Docker Compose 配置,便于部署
-- ⏰ **定时任务**: Cron 定时任务支持
-- 📊 **性能分析**: 内置 fgprof 性能分析工具
+- Fiber v2 + Huma 类型化 API 路由
+- JWT 访问令牌和刷新令牌
+- GitHub / Google OAuth2 登录
+- PostgreSQL + GORM
+- Redis 缓存
+- MinIO / 腾讯云 COS 对象存储适配
+- OpenAPI 3.1 文档
+- Cobra 命令行
+- Zap + Lumberjack 日志轮转
+- CORS、压缩、恢复、Trace ID、请求日志、限流、权限校验中间件
+- Cron 定时任务
+- Dockerfile、本地全量 Docker Compose、生产/开发 Compose 模板
+- Makefile、静态检查和 pre-commit hook
 
-### 🛠️ 技术栈
+### 技术栈
 
-- **框架**: Fiber v2 + Huma
-- **语言**: Go 1.25.1
-- **数据库**: PostgreSQL (使用 GORM)
-- **缓存**: Redis
-- **对象存储**: MinIO / 腾讯云 COS
-- **身份验证**: JWT, OAuth2 (GitHub, Google)
-- **API 文档**: OpenAPI V3
-- **CLI**: Cobra
-- **配置管理**: Viper
-- **日志**: Zap 配合 Lumberjack 日志轮转
-- **JSON**: Sonic
+- 语言：Go 1.25.1
+- 框架：Fiber v2 + Huma
+- 数据库：PostgreSQL + GORM
+- 缓存：Redis
+- 对象存储：MinIO / 腾讯云 COS
+- CLI：Cobra
+- 配置：Viper
+- 日志：Zap + Lumberjack
+- JSON：Sonic
 
-### 📁 项目结构
+### 项目结构
 
-```
+```text
 .
-├── cmd                   # 命令行接口
-├── docker                # Docker配置
+├── cmd                   # Cobra 命令
+├── docker                # Dockerfile 和 Compose 文件
 ├── env                   # 环境变量模板
-├── go.mod
-├── go.sum
 ├── internal              # 内部实现
-│   ├── api               # API 相关
-│   ├── common            # 公共常量/枚举/模型
-│   ├── config            # 配置管理
+│   ├── api               # Fiber 和 Huma 初始化
+│   ├── common            # 公共常量、枚举、模型、错误
+│   ├── config            # 环境配置
 │   ├── cron              # 定时任务
 │   ├── dto               # 数据传输对象
-│   ├── handler           # 处理器
-│   ├── infrastructure    # 基础设施
-│   ├── jwt               # JWT 相关
-│   ├── lock              # 锁
-│   ├── logger            # 日志
-│   ├── middleware        # 中间件
-│   ├── oauth2            # OAuth2 相关
-│   ├── router            # 路由
-│   ├── service           # 服务
+│   ├── handler           # HTTP 处理器
+│   ├── infrastructure    # 数据库、缓存、存储、HTTP client、协程池
+│   ├── jwt               # JWT 工具
+│   ├── lock              # 锁工具
+│   ├── logger            # 日志初始化
+│   ├── middleware        # HTTP 中间件
+│   ├── oauth2            # OAuth2 提供方
+│   ├── router            # 路由注册
+│   ├── service           # 业务服务
 │   └── util              # 工具函数
-├── LICENSE
+├── script                # 部署脚本
+├── test                  # 集成/E2E/专项测试
 ├── main.go
-└── README.md
+└── Makefile
 ```
 
-### 🚀 快速开始
+### 快速开始
 
 #### 前置要求
 
 - Go 1.25.1 或更高版本
-- Docker 和 Docker Compose (用于容器化部署)
-- PostgreSQL (如果本地运行)
-- Redis (如果本地运行)
+- Docker 和 Docker Compose
 
-#### 1. 克隆仓库
-
-```bash
-git clone https://github.com/hcd233/aris-api-tmpl.git
-cd aris-api-tmpl
-```
-
-#### 2. 配置环境变量
-
-复制环境变量模板并根据需要修改:
+#### 配置环境变量
 
 ```bash
 cp env/api.env.template env/api.env
-# 编辑 env/api.env 填入你的配置
+cp env/postgresql.env.template env/postgresql.env
+cp env/redis.env.template env/redis.env
+cp env/minio.env.template env/minio.env
 ```
 
-需要配置的关键项:
-- 数据库凭据 (`POSTGRES_*`)
-- Redis 连接 (`REDIS_*`)
-- JWT 密钥 (`JWT_ACCESS_TOKEN_SECRET`, `JWT_REFRESH_TOKEN_SECRET`)
-- OAuth2 凭据 (如果使用 OAuth2 登录)
-- 对象存储凭据 (MinIO 或 COS)
-- OpenAI API 密钥 (如果使用 AI 功能)
+非本地环境运行前，请修改生成文件中的占位密钥。
 
-#### 3. 使用 Docker Compose 运行 (推荐)
+#### 使用 Docker Compose 运行
 
-创建所需的数据卷:
 ```bash
-docker volume create postgresql-data
-docker volume create redis-data
-docker volume create minio-data
+docker compose -f docker/docker-compose.yml up -d --build
 ```
 
-启动所有服务:
-```bash
-docker compose -f docker/docker-compose.yml up -d
-```
+该命令会启动 PostgreSQL、Redis、MinIO、迁移任务和 API 服务，API 地址为 `http://localhost:8080`。
 
-这将启动:
-- PostgreSQL 数据库
-- Redis 缓存
-- MinIO 对象存储
-- API 服务器 (访问地址: http://localhost:8170)
+#### 本地运行
 
-#### 4. 本地运行
-
-安装依赖:
 ```bash
 go mod download
-```
-
-运行数据库迁移:
-```bash
 go run main.go database migrate
-```
-
-启动服务器:
-```bash
 go run main.go server start --host localhost --port 8080
 ```
 
-### 📚 API 文档
+### API 文档
 
-服务器运行后,访问 OpenAPI V3 文档:
-```
+```text
 http://localhost:8080/docs
 ```
 
-### 🔑 可用命令
+### 常用命令
 
 ```bash
-# 启动服务器
-go run main.go server start [--host HOST] [--port PORT]
+make build
+make build-dev
+make build-debug
+make lint
+make test
+make test-cover
 
-# 数据库迁移
+go run main.go server start --host localhost --port 8080
 go run main.go database migrate
-
-# 对象存储管理 (如果适用)
-go run main.go object [subcommand]
+go run main.go object bucket create
+go run main.go lint static ./...
 ```
 
-### 🔐 身份验证
-
-API 支持多种身份验证方式:
-
-1. **OAuth2**: 通过 GitHub 或 Google 登录
-   - `GET /v1/oauth2/github/login`
-   - `GET /v1/oauth2/google/login`
-
-2. **JWT 令牌**: OAuth2 登录后获取访问/刷新令牌
-   - `POST /v1/token/refresh` - 刷新访问令牌
-
-### 🛡️ API 端点
+### API 端点
 
 - `GET /health` - 健康检查
 - `GET /ssehealth` - SSE 健康检查
-- `GET /docs` - API 文档
-- `GET /v1/oauth2/{provider}/login` - OAuth2 登录
-- `GET /v1/oauth2/{provider}/callback` - OAuth2 回调
-- `POST /v1/token/refresh` - 刷新 JWT 令牌
-- `GET /v1/user/current` - 获取当前用户信息 (需要认证)
-- `GET /v1/user/{userID}` - 根据 ID 获取用户信息 (需要认证)
-- `PATCH /v1/user` - 更新用户信息 (需要认证)
+- `GET /docs` - 非生产环境 API 文档
+- `GET /api/v1/oauth2/login?platform=github` - GitHub OAuth2 登录 URL
+- `GET /api/v1/oauth2/login?platform=google` - Google OAuth2 登录 URL
+- `POST /api/v1/oauth2/callback` - OAuth2 回调换取 Token
+- `POST /api/v1/token/refresh` - 刷新 JWT
+- `GET /api/v1/user/current` - 获取当前用户信息
+- `PATCH /api/v1/user/` - 更新当前用户信息
 
-### 🔧 开发
+### 开发检查
 
-构建二进制文件:
 ```bash
-go build -o aris-api-tmpl main.go
+make lint
+go test -count=1 ./...
 ```
 
-运行测试 (如果有):
+如需安装 Git hook：
+
 ```bash
-go test ./...
+bash .githooks/setup.sh
 ```
 
+### 许可证
 
-### 📝 环境变量
-
-| 变量 | 描述 | 默认值 |
-|------|------|--------|
-| `PORT` | 服务器端口 | 8080 |
-| `READ_TIMEOUT` | 读取超时时间(秒) | 10 |
-| `WRITE_TIMEOUT` | 写入超时时间(秒) | 10 |
-| `LOG_LEVEL` | 日志级别 | INFO |
-| `POSTGRES_*` | PostgreSQL 连接设置 | - |
-| `REDIS_*` | Redis 连接设置 | - |
-| `JWT_ACCESS_TOKEN_EXPIRED` | 访问令牌过期时间 | 12h |
-| `JWT_REFRESH_TOKEN_EXPIRED` | 刷新令牌过期时间 | 168h |
-| `OAUTH2_*` | OAuth2 提供商设置 | - |
-| `MINIO_*` | MinIO 存储设置 | - |
-| `COS_*` | 腾讯云 COS 存储设置 | - |
-| `OPENAI_*` | OpenAI API 设置 | - |
-
-### 📄 许可证
-
-本项目采用 Apache License 2.0 许可证 - 详情请见 [LICENSE](LICENSE) 文件。
-
-### 🤝 贡献
-
-欢迎贡献! 请随时提交 Pull Request。
-
----
-
-**Made with ❤️ by hcd233**
+本项目采用 Apache License 2.0 许可证，详见 `LICENSE`。

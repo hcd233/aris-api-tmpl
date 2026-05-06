@@ -36,3 +36,10 @@ logs/
 .codebuddy/plans
 .codebuddy/memory
 .codebuddy/*.md
+
+# Coverage
+coverage.out
+coverage.html
+
+# Worktrees
+.worktrees/

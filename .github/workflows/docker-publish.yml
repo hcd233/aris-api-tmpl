@@ -4,8 +4,8 @@ on:
   schedule:
     - cron: '26 21 * * *'
   push:
-    branches: [ "master" ]
-    tags: [ 'v*.*.*' ]
+    branches: ["master"]
+    tags: ['v*.*.*']
     paths:
       - 'internal/**'
       - 'docker/**'
@@ -13,8 +13,11 @@ on:
       - 'main.go'
       - 'go.mod'
       - 'go.sum'
+      - 'Makefile'
+      - '.golangci.yml'
+      - '.github/workflows/docker-publish.yml'
   pull_request:
-    branches: [ "master" ]
+    branches: ["master"]
     paths:
       - 'internal/**'
       - 'docker/**'
@@ -22,13 +25,62 @@ on:
       - 'main.go'
       - 'go.mod'
       - 'go.sum'
+      - 'Makefile'
+      - '.golangci.yml'
+      - '.github/workflows/docker-publish.yml'
+
+permissions:
+  contents: read
 
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Download dependencies
+        run: go mod download
+
+      - name: Verify gofmt
+        run: |
+          files=$(gofmt -l $(git ls-files '*.go'))
+          if [ -n "$files" ]; then
+            echo "$files"
+            exit 1
+          fi
+
+      - name: Run go vet
+        run: go vet ./...
+
+      - name: Run tests
+        run: go test -count=1 ./...
+
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@v8
+        with:
+          version: v2.11.4
+          args: ./...
+
+      - name: Lint Dockerfile
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: docker/dockerfile
+          failure-threshold: error
+
   build:
+    if: github.event_name != 'pull_request'
+    needs: quality
     env:
       BRANCH_TAG: ""
       PLATFORM_PAIR: ""
@@ -40,7 +92,7 @@ jobs:
             runner: ubuntu-latest
             platform-pair: linux-amd64
           - platform: linux/arm64
-            runner: ubuntu-24.04-arm  # 使用原生ARM64 runner
+            runner: ubuntu-24.04-arm
             platform-pair: linux-arm64
     runs-on: ${{ matrix.runner }}
     permissions:
@@ -53,26 +105,19 @@ jobs:
 
       - name: Prepare
         run: |
-          echo "PLATFORM_PAIR=${{ matrix.platform-pair }}" >> $GITHUB_ENV 
+          echo "PLATFORM_PAIR=${{ matrix.platform-pair }}" >> "$GITHUB_ENV"
 
       - name: Set branch tag
         run: |
           ref="${GITHUB_REF_NAME}"
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            ref="${GITHUB_HEAD_REF}"
-          fi
           ref="${ref//\//-}"
-          echo "BRANCH_TAG=${ref}" >> $GITHUB_ENV
-
-      - name: Prepare Docker File
-        run: cp docker/dockerfile dockerfile
+          echo "BRANCH_TAG=${ref}" >> "$GITHUB_ENV"
 
       - name: Install cosign
         uses: sigstore/cosign-installer@v3.5.0
         with:
           cosign-release: 'v2.2.4'
 
-      # 只在非原生平台时设置QEMU (实际上现在都是原生的，但保留以防未来需要)
       - name: Set up QEMU
         if: ${{ matrix.platform != 'linux/amd64' && matrix.runner == 'ubuntu-latest' }}
         uses: docker/setup-qemu-action@v3
@@ -94,7 +139,6 @@ jobs:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
             type=ref,event=branch
-            type=raw,event=pr,value={{head_ref}}
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=sha
@@ -102,13 +146,16 @@ jobs:
 
       - name: Build and push by digest
         id: build
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
+          file: docker/dockerfile
           platforms: ${{ matrix.platform }}
           push: true
           labels: ${{ steps.meta.outputs.labels }}
           outputs: type=image,name=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }},push-by-digest=true,name-canonical=true,push=true
+          cache-from: type=gha,scope=${{ matrix.platform-pair }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.platform-pair }}
 
       - name: Export digest
         run: |
@@ -125,9 +172,8 @@ jobs:
           retention-days: 1
 
   merge:
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
-    env:
-      BRANCH_TAG: ""
     needs:
       - build
     steps:
@@ -151,11 +197,8 @@ jobs:
       - name: Set branch tag
         run: |
           ref="${GITHUB_REF_NAME}"
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            ref="${GITHUB_HEAD_REF}"
-          fi
           ref="${ref//\//-}"
-          echo "BRANCH_TAG=${ref}" >> $GITHUB_ENV
+          echo "BRANCH_TAG=${ref}" >> "$GITHUB_ENV"
 
       - name: Extract Docker metadata
         id: meta
@@ -164,7 +207,6 @@ jobs:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
             type=ref,event=branch
-            type=raw,event=pr,value={{head_ref}}
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=sha

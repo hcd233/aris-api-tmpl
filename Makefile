@@ -1,19 +1,15 @@
 # Makefile for aris-api-tmpl
 
-APP_NAME   := aris-api-tmpl
-MAIN       := main.go
-OUTPUT     := $(APP_NAME)
+APP_NAME := aris-api-tmpl
+MAIN     := main.go
+OUTPUT   := $(APP_NAME)
 
-# 并行编译：默认使用全部 CPU 核心
 GOMAXPROCS ?= $(shell nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)
 
-# 编译优化参数
-# -s: 去除符号表  -w: 去除 DWARF 调试信息
-LDFLAGS    := -s -w
-# -trimpath: 去除编译路径信息（减小体积 + 安全）
+LDFLAGS     := -s -w
 BUILD_FLAGS := -trimpath -p $(GOMAXPROCS)
 
-.PHONY: build build-upx build-dev build-debug clean test test-cover help
+.PHONY: build build-upx build-dev build-debug warm-cache clean clean-all fmt vet test test-cover lint lint-static help
 
 ## build: 生产构建（strip 符号）
 build:
@@ -50,9 +46,18 @@ warm-cache:
 clean:
 	rm -f $(OUTPUT)
 
-## clean-all: 清理构建产物和编译缓存
+## clean-all: 清理构建产物、测试覆盖率和编译缓存
 clean-all: clean
+	rm -f coverage.out coverage.html
 	go clean -cache
+
+## fmt: 格式化 Go 代码
+fmt:
+	go fmt ./...
+
+## vet: 运行 go vet
+vet:
+	go vet ./...
 
 ## test: 运行全量测试
 test:
@@ -60,9 +65,16 @@ test:
 
 ## test-cover: 带覆盖率的测试
 test-cover:
-	go test -count=1 -coverprofile=coverage.out ./test/...
+	go test -count=1 -coverprofile=coverage.out ./...
 	go tool cover -html=coverage.out -o coverage.html
 	@echo "Coverage report: coverage.html"
+
+## lint: 运行全部静态检查
+lint: lint-static
+
+## lint-static: 运行 Go 静态分析（go vet + 可选 golangci-lint）
+lint-static:
+	@go run $(MAIN) lint static ./...
 
 ## help: 显示帮助
 help:
